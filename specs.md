@@ -32,3 +32,5 @@ void palindromes(String candidate, RandomizedContext ctx) {
 ```
 
 * randomized context supplier should be initialized via service loader extension (so that it is always initialized)
+* potential problem - implementing @Repeat and @Seed(s); conflicts with other template test extensions in JUnit5 (only
+one TestTemplateInvocationContextProvider is allowed on a class).
