@@ -1,15 +1,43 @@
 package com.carrotsearch.randomizedtesting.junitframework;
 
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
+import static org.junit.platform.commons.support.AnnotationSupport.isAnnotated;
+
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.extension.ClassTemplateInvocationContext;
+import org.junit.jupiter.api.extension.ClassTemplateInvocationContextProvider;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
+import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 
 public class RandomizedContextSupplier
-    implements ParameterResolver, BeforeAllCallback, BeforeEachCallback {
+    implements ParameterResolver, ClassTemplateInvocationContextProvider {
+  @Override
+  public boolean supportsClassTemplate(ExtensionContext context) {
+    return isAnnotated(context.getRequiredTestClass(), Randomized.class);
+  }
 
+  @Override
+  public Stream<? extends ClassTemplateInvocationContext> provideClassTemplateInvocationContexts(
+      ExtensionContext context) {
+    return Stream.of(
+        new ClassTemplateInvocationContext() {
+          @Override
+          public void prepareInvocation(ExtensionContext context) {
+            ClassTemplateInvocationContext.super.prepareInvocation(context);
+          }
+
+          @Override
+          public String getDisplayName(int invocationIndex) {
+            return "[seed: 0xdeadbeef]";
+          }
+        });
+  }
+
+  /*
   @Override
   public void beforeAll(ExtensionContext context) throws Exception {
     System.out.println("beforeAll: " + context.getUniqueId());
@@ -30,6 +58,7 @@ public class RandomizedContextSupplier
             ExtensionContext.Namespace.create("randomizedtesting"))
         .put("foo", "bar: " + context.getUniqueId());
   }
+   */
 
   //
   // ParameterResolver: inject RandomizedContext into test methods.
