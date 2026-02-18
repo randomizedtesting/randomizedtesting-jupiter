@@ -1,6 +1,8 @@
 [versions]
 assertj = "3.27.6"
+googleJavaFormat = "1.34.1"
 junit = "6.0.2"
+spotless = "8.2.1"
 
 [libraries]
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
@@ -8,3 +10,6 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "jun
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
 junit-platform-testkit = { module = "org.junit.platform:junit-platform-testkit", version.ref = "junit" }
+
+[plugins]
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

@@ -4,6 +4,6 @@ module com.carrotsearch.randomizedtesting {
 
   exports com.carrotsearch.randomizedtesting.jupiter;
 
-  provides org.junit.jupiter.api.extension.Extension
-      with com.carrotsearch.randomizedtesting.jupiter.RandomizedContextSupplier;
+  provides org.junit.jupiter.api.extension.Extension with
+      com.carrotsearch.randomizedtesting.jupiter.RandomizedContextSupplier;
 }
