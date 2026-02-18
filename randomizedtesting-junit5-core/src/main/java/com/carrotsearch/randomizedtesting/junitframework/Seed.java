@@ -1,22 +1,21 @@
 package com.carrotsearch.randomizedtesting.junitframework;
 
-public class RandomSeed {
+record Seed(long value) {
   private static final char[] HEX = "0123456789ABCDEF".toCharArray();
-
-  public final long value;
-
-  public RandomSeed(long seed) {
-    this.value = seed;
-  }
+  static final Seed UNSPECIFIED = new Seed(0);
 
   @Override
   public String toString() {
     long seed = value;
-    StringBuilder b = new StringBuilder();
+    StringBuilder b = new StringBuilder(Long.BYTES * 2);
     do {
       b.append(HEX[(int) (seed & 0xF)]);
       seed = seed >>> 4;
     } while (seed != 0);
     return b.reverse().toString();
+  }
+
+  public boolean isUnspecified() {
+    return this == UNSPECIFIED;
   }
 }

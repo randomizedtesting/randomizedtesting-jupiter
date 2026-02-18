@@ -3,37 +3,50 @@ package com.carrotsearch.randomizedtesting.junitframework;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Random;
-import java.util.function.LongUnaryOperator;
+import java.util.function.LongFunction;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
-public class RandomizedContext {
-  private final Thread owner;
-  private final RandomSeed seed;
+public final class RandomizedContext {
   private final RandomizedContext parent;
+  private final Thread owner;
+  private final Seed seed;
+  private final String contextId;
+
+  private final SeedChain remainingSeedChain;
+
   private final Random random;
+  private final LongFunction<Random> seedToRandomFn;
 
-  public RandomizedContext(Thread owner, RandomSeed seed) {
-    this(null, owner, seed);
-  }
-
-  private RandomizedContext(RandomizedContext parent, Thread owner, RandomSeed seed) {
-    this.owner = owner;
-    this.seed = seed;
-    this.random = new Random(seed.value);
+  RandomizedContext(
+      String contextId,
+      RandomizedContext parent,
+      Thread owner,
+      LongFunction<Random> seedToRandomFn,
+      Seed seed,
+      SeedChain remainingSeedChain) {
+    this.contextId = contextId;
     this.parent = parent;
+    this.owner = owner;
+    this.remainingSeedChain = remainingSeedChain;
+    this.seedToRandomFn = seedToRandomFn;
+
+    assert !seed.isUnspecified();
+    this.seed = seed;
+    this.random = seedToRandomFn.apply(seed.value());
   }
 
   @Override
   public String toString() {
     return "Randomized context ["
-        + ("seedChain=" + getSeedChain())
-        + ","
+        + ("seedChain=" + getSeedChain() + ",")
         + ("thread=" + Threads.threadName(owner))
         + "]";
   }
 
-  public SeedChain getSeedChain() {
-    ArrayList<RandomSeed> seeds = new ArrayList<>();
+  SeedChain getSeedChain() {
+    ArrayList<Seed> seeds = new ArrayList<>();
     for (RandomizedContext c = this; c != null; c = c.getParent()) {
       seeds.add(c.seed);
     }
@@ -43,11 +56,6 @@ public class RandomizedContext {
 
   private RandomizedContext getParent() {
     return parent;
-  }
-
-  public RandomizedContext fork(Thread forThread, LongUnaryOperator initialSeedFunction) {
-    long initSeed = initialSeedFunction.applyAsLong(getRandom().nextLong());
-    return new RandomizedContext(this, forThread, new RandomSeed(initSeed));
   }
 
   public Random getRandom() {
@@ -62,5 +70,32 @@ public class RandomizedContext {
     }
 
     return random;
+  }
+
+  RandomizedContext deriveNew(Thread thread, ExtensionContext extensionContext) {
+    // sanity check.
+    {
+      var id = extensionContext.getUniqueId();
+      for (var ctx = this; ctx != null; ctx = ctx.getParent()) {
+        if (Objects.equals(ctx.contextId, id)) {
+          throw new RuntimeException(
+              "deriveNew on a context that is already present in the parent chain: " + id);
+        }
+      }
+    }
+
+    var firstAndRest = this.remainingSeedChain.pop();
+    var nextSeed = firstAndRest.first();
+    if (nextSeed.isUnspecified()) {
+      nextSeed = new Seed(this.seed.value() ^ Hashing.longHash(extensionContext.getUniqueId()));
+    }
+
+    return new RandomizedContext(
+        extensionContext.getUniqueId(),
+        this,
+        thread,
+        seedToRandomFn,
+        nextSeed,
+        firstAndRest.rest());
   }
 }

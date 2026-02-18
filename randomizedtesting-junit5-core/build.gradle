@@ -1,5 +1,6 @@
 dependencies {
     api libs.junit.jupiter
+
     testImplementation libs.assertj
     testImplementation libs.junit.jupiter.engine
     testImplementation libs.junit.platform.testkit
