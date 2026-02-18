@@ -1,9 +1,9 @@
-package com.carrotsearch.randomizedtesting.junitframework;
+package com.carrotsearch.randomizedtesting.jupiter;
 
-import static com.carrotsearch.randomizedtesting.junitframework.infra.NestedTestResults.*;
+import static com.carrotsearch.randomizedtesting.jupiter.infra.NestedTestResults.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.carrotsearch.randomizedtesting.junitframework.infra.NestedTest;
+import com.carrotsearch.randomizedtesting.jupiter.infra.NestedTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;

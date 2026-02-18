@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.junitframework;
+package com.carrotsearch.randomizedtesting.jupiter;
 
 record Seed(long value) {
   private static final char[] HEX = "0123456789ABCDEF".toCharArray();

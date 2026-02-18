@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.junitframework;
+package com.carrotsearch.randomizedtesting.jupiter;
 
 import java.util.List;
 import java.util.Locale;

@@ -1,8 +1,8 @@
-package com.carrotsearch.randomizedtesting.junitframework.experiments;
+package com.carrotsearch.randomizedtesting.jupiter.experiments;
 
-import com.carrotsearch.randomizedtesting.junitframework.Randomized;
-import com.carrotsearch.randomizedtesting.junitframework.RandomizedContext;
-import com.carrotsearch.randomizedtesting.junitframework.RandomizedContextSupplier;
+import com.carrotsearch.randomizedtesting.jupiter.Randomized;
+import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
+import com.carrotsearch.randomizedtesting.jupiter.RandomizedContextSupplier;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;

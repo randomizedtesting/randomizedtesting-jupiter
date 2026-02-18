@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.junitframework;
+package com.carrotsearch.randomizedtesting.jupiter;
 
 import java.util.Objects;
 import java.util.Random;

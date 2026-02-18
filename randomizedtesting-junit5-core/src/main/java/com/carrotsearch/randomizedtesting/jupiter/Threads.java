@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.junitframework;
+package com.carrotsearch.randomizedtesting.jupiter;
 
 public final class Threads {
   Threads() {}

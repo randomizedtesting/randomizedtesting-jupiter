@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.junitframework.infra;
+package com.carrotsearch.randomizedtesting.jupiter.infra;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 

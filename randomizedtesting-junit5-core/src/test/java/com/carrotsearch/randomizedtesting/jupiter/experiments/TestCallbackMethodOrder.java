@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.junitframework.experiments;
+package com.carrotsearch.randomizedtesting.jupiter.experiments;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;

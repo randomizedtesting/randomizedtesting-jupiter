@@ -1,1 +1,1 @@
-com.carrotsearch.randomizedtesting.junitframework.RandomizedContextSupplier
+com.carrotsearch.randomizedtesting.jupiter.RandomizedContextSupplier

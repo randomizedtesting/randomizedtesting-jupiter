@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.junitframework.infra;
+package com.carrotsearch.randomizedtesting.jupiter.infra;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
