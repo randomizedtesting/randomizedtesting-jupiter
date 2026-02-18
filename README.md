@@ -1,8 +1,9 @@
-# Randomized Testing for JUnit5
+# Randomized Testing for JUnit5 (Jupiter Engine)
 
-JUnit5 (JUnit framework) extensions for more controlled pseudo-randomness
-in unit tests.
+A set of JUnit5 (Jupiter Engine) extensions for more controlled
+pseudo-randomness in unit tests.
 
+This is a clone of the JUnit4-based `randomizedtesting` project.
 See the following for more information:
 - [Docs](https://github.com/randomizedtesting/randomizedtesting/wiki)
 - [Bugs](https://github.com/randomizedtesting/randomizedtesting/issues)
