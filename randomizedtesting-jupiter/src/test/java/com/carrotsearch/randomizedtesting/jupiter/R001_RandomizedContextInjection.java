@@ -113,13 +113,16 @@ public class R001_RandomizedContextInjection {
   }
 
   @Test
-  public void identicalRandomWithTestFiltering() {
+  public void identicalDerivedSeedWithTestFiltering() {
     var executionResult1 =
         collectExecutionResults(
             testKitBuilder(TestIdenticalRandomWithTestFiltering.class)
                 .configurationParameter(
                     RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey, "deadbeed"));
 
+    // select just one of the tests and pick it by its unique id. then re-run it.
+    // the seed/ random should be identical because the re-run starts from the same root
+    // seed.
     var pickedTest = executionResult1.capturedOutput().keySet().toArray(String[]::new)[2];
 
     var executionResult2 =
