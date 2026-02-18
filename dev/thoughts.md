@@ -2,7 +2,6 @@
 
 Implement test randomization context passing and seed hierarchy/ aggregation/ exception injection reporting.
 
-// TODO: test filtering of a repeated test (from the same root seed) should rerun the same test.
 // TODO: stack trace augmentation in case of failed tests (seed).
 
 * randomized context supplier should be initialized via service loader extension (so that it is always initialized)
