@@ -9,15 +9,17 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.support.descriptor.MethodSource;
+import org.junit.platform.testkit.engine.EngineExecutionResults;
 import org.junit.platform.testkit.engine.EngineTestKit;
-import org.junit.platform.testkit.engine.Events;
 
 /**
  * Runs a nested test class via {@link EngineTestKit} and collects structured {@link TestResult}s.
  */
 public class NestedTestResults {
-  public record ExecutionResult(Events events, Map<String, String> capturedOutput) {
+  public record ExecutionResult(
+      EngineExecutionResults results, Map<String, String> capturedOutput) {
     public Map<String, TestResult> testResults() {
+      var events = results.testEvents().finished();
       var map = new LinkedHashMap<String, TestResult>();
       for (var event : events.list()) {
         var descriptor = event.getTestDescriptor();
@@ -55,7 +57,7 @@ public class NestedTestResults {
   }
 
   public static ExecutionResult collectExecutionResults(EngineTestKit.Builder builder) {
-    var events = builder.execute().testEvents().finished();
+    var events = builder.execute();
     var capturedOutput = OutputCaptureExtension.drain();
     return new ExecutionResult(events, capturedOutput);
   }
