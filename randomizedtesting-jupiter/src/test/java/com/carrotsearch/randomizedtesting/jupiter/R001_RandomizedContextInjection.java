@@ -14,7 +14,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.Parameter;
 import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -84,7 +83,7 @@ public class R001_RandomizedContextInjection {
             executionResult.capturedOutput().values().stream()
                 .map(s -> SeedChain.parse(s).seeds().get(2))
                 .collect(Collectors.toSet()))
-        .hasSizeBetween(8, 10); // allow for collisions. Not likely, but...
+        .hasSizeBetween(8, 10); // allow some collisions. Not likely, but...
   }
 
   @Test
@@ -115,11 +114,16 @@ public class R001_RandomizedContextInjection {
     var executionResult =
         collectExecutionResults(testKitBuilder(RandomSeedInParameterizedClass.class));
 
-    // root seed should be different between test runs because class context is another
-    // hierarchical node (and has a unique id).
+    // the seed chain should be now composed of engine:class:class-invocation:* elements.
+    // ensure they're unique for each invocation.
     Assertions.assertThat(
             executionResult.capturedOutput().values().stream()
-                .map(s -> SeedChain.parse(s).seeds().subList(0, 1))
+                .map(
+                    s -> {
+                      var seeds = SeedChain.parse(s).seeds();
+                      Assertions.assertThat(seeds).hasSize(4);
+                      return SeedChain.parse(s).seeds().subList(0, 3);
+                    })
                 .collect(Collectors.toSet()))
         .hasSizeBetween(8, 10); // allow for collisions. Not likely, but...
   }
@@ -128,12 +132,9 @@ public class R001_RandomizedContextInjection {
   @ParameterizedClass
   @ValueSource(strings = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"})
   static class RandomSeedInParameterizedClass extends NestedTest {
-    @Parameter public String param;
-
     @Test
     void testMethod(PrintWriter pw, RandomizedContext ctx) {
       pw.println(ctx.getSeedChain());
-      System.out.println("param: " + param + ", " + ctx.getSeedChain());
     }
   }
 

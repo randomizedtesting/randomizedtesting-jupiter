@@ -12,7 +12,7 @@ public final class RandomizedContext {
   private final RandomizedContext parent;
   private final Thread owner;
   private final Seed seed;
-  private final String contextId;
+  final String contextId;
 
   private final SeedChain remainingSeedChain;
 

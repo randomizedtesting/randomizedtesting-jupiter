@@ -3,6 +3,7 @@ package com.carrotsearch.randomizedtesting.jupiter;
 import java.util.Objects;
 import java.util.Random;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeClassTemplateInvocationCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -10,7 +11,10 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
 public class RandomizedContextSupplier
-    implements ParameterResolver, BeforeAllCallback, BeforeEachCallback {
+    implements ParameterResolver,
+        BeforeAllCallback,
+        BeforeClassTemplateInvocationCallback,
+        BeforeEachCallback {
   private static final ExtensionContext.Namespace EXTENSION_NAMESPACE =
       ExtensionContext.Namespace.create(RandomizedContextSupplier.class);
 
@@ -28,15 +32,11 @@ public class RandomizedContextSupplier
   }
 
   //
-  // Bootstrap initialization.
-  //
-
-  //
   // before-all (class-level context setup).
   //
 
   @Override
-  public void beforeAll(ExtensionContext extensionContext) throws Exception {
+  public void beforeAll(ExtensionContext extensionContext) {
     // Bootstrap the root store's context. Don't know if this can be done
     // in a more elegant way.
     extensionContext
@@ -68,7 +68,12 @@ public class RandomizedContextSupplier
   }
 
   @Override
-  public void beforeEach(ExtensionContext extensionContext) throws Exception {
+  public void beforeClassTemplateInvocation(ExtensionContext extensionContext) {
+    pushNestedRandomizedContext(extensionContext);
+  }
+
+  @Override
+  public void beforeEach(ExtensionContext extensionContext) {
     pushNestedRandomizedContext(extensionContext);
   }
 

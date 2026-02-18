@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeClassTemplateInvocationCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.DynamicTestInvocationContext;
@@ -23,12 +24,20 @@ import org.junit.jupiter.api.extension.TestInstanceFactoryContext;
 import org.junit.jupiter.api.extension.TestInstancePostProcessor;
 import org.junit.jupiter.api.extension.TestInstancePreConstructCallback;
 import org.junit.jupiter.api.extension.TestInstancePreDestroyCallback;
+import org.junit.jupiter.params.ParameterizedClass;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Disabled
 @ExtendWith(TestCallbackMethodOrder.DebugExt.class)
+@ParameterizedClass
+@ValueSource(strings = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"})
 public class TestCallbackMethodOrder {
   static {
     System.out.println("Static constructor.");
+  }
+
+  public TestCallbackMethodOrder(String param) {
+    System.out.println("constructor: " + param);
   }
 
   @BeforeAll
@@ -63,6 +72,7 @@ public class TestCallbackMethodOrder {
           BeforeEachCallback,
           AfterEachCallback,
           BeforeTestExecutionCallback,
+          BeforeClassTemplateInvocationCallback,
           AfterTestExecutionCallback,
           TestInstancePostProcessor,
           TestInstancePreConstructCallback,
@@ -207,6 +217,11 @@ public class TestCallbackMethodOrder {
         throws Throwable {
       log("interceptAfterAllMethod", extensionContext);
       invocation.proceed();
+    }
+
+    @Override
+    public void beforeClassTemplateInvocation(ExtensionContext extensionContext) throws Exception {
+      log("beforeClassTemplateInvocation", extensionContext);
     }
   }
 }
