@@ -8,11 +8,11 @@ import java.lang.annotation.Target;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * This annotation should be placed on classes or test methods that should have access to {@link
- * RandomizedContext}. The associated extension injects {@link RandomizedContext} parameter type
- * automatically into test methods and lifecycle hooks.
+ * This annotation should be placed on classes that want access to {@link RandomizedContext}. This
+ * extension injects {@link RandomizedContext} parameter type automatically into test methods and
+ * lifecycle hooks.
  */
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target({ElementType.TYPE})
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(RandomizedContextSupplier.class)

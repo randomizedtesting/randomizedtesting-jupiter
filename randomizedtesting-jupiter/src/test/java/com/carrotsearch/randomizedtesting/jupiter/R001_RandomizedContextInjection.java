@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.carrotsearch.randomizedtesting.jupiter.infra.NestedTest;
 import java.io.PrintWriter;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.platform.engine.discovery.DiscoverySelectors;
 
 /**
  * Verifies that {@link RandomizedContextSupplier} properly creates and injects a {@link
@@ -108,6 +110,40 @@ public class R001_RandomizedContextInjection {
                             .map(s -> SeedChain.parse(s).seeds().subList(0, 2))
                             .collect(Collectors.toSet())))
         .hasSize(2);
+  }
+
+  @Test
+  public void identicalRandomWithTestFiltering() {
+    var executionResult1 =
+        collectExecutionResults(
+            testKitBuilder(TestIdenticalRandomWithTestFiltering.class)
+                .configurationParameter(
+                    RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey, "deadbeed"));
+
+    var pickedTest = executionResult1.capturedOutput().keySet().toArray(String[]::new)[2];
+
+    var executionResult2 =
+        collectExecutionResults(
+            testKitBuilder()
+                .configurationParameter(
+                    RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey, "deadbeed")
+                .selectors(DiscoverySelectors.selectUniqueId(pickedTest)));
+
+    String o1 = executionResult1.capturedOutput().get(pickedTest);
+    String o2 = executionResult2.capturedOutput().get(pickedTest);
+    Assertions.assertThat(o1).isEqualTo(o2);
+  }
+
+  @Randomized
+  static class TestIdenticalRandomWithTestFiltering extends NestedTest {
+    @RepeatedTest(10)
+    void testMethod(PrintWriter pw, RandomizedContext ctx) {
+      pw.println(ctx.getSeedChain());
+      pw.println(
+          IntStream.range(0, 10)
+              .mapToObj(i -> Long.toHexString(ctx.getRandom().nextLong()))
+              .collect(Collectors.joining(":")));
+    }
   }
 
   @Randomized

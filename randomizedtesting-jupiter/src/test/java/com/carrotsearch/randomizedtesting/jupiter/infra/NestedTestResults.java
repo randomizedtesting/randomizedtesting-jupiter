@@ -63,7 +63,11 @@ public class NestedTestResults {
   }
 
   public static EngineTestKit.Builder testKitBuilder(Class<?> testClass) {
+    return testKitBuilder().selectors(selectClass(testClass));
+  }
+
+  public static EngineTestKit.Builder testKitBuilder() {
     OutputCaptureExtension.drain();
-    return EngineTestKit.engine(new JupiterTestEngine()).selectors(selectClass(testClass));
+    return EngineTestKit.engine(new JupiterTestEngine());
   }
 }
