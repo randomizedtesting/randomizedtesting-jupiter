@@ -23,10 +23,10 @@ import org.junit.jupiter.params.provider.ValueSource;
  */
 public class R001_RandomizedContextInjection {
   @Test
-  public void fixedSeedAllHooks() {
+  public void fixedSeedInjectedInAllHooks() {
     assertThat(
             collectExecutionResults(
-                    testKitBuilder(FixedSeedAllHooks.class)
+                    testKitBuilder(TestFixedSeedInjectedInAllHooks.class)
                         .configurationParameter(
                             RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey,
                             "dead:beef:cafe"))
@@ -36,8 +36,8 @@ public class R001_RandomizedContextInjection {
   }
 
   @Randomized
-  static class FixedSeedAllHooks extends NestedTest {
-    public FixedSeedAllHooks(RandomizedContext ctx) {
+  static class TestFixedSeedInjectedInAllHooks extends NestedTest {
+    public TestFixedSeedInjectedInAllHooks(RandomizedContext ctx) {
       Assertions.assertThat(ctx.getSeedChain().toString()).isEqualTo("[DEAD:BEEF]");
     }
 
@@ -68,8 +68,9 @@ public class R001_RandomizedContextInjection {
   }
 
   @Test
-  public void randomSeedVariesInTestRepeats() {
-    var executionResult = collectExecutionResults(testKitBuilder(RandomSeedInRepeatedTest.class));
+  public void randomSeedVariesInRepeatedTests() {
+    var executionResult =
+        collectExecutionResults(testKitBuilder(TestRandomSeedInRepeatedTests.class));
 
     // root and class seeds should remain constant.
     Assertions.assertThat(
@@ -81,15 +82,23 @@ public class R001_RandomizedContextInjection {
     // each test should have a unique last seed.
     Assertions.assertThat(
             executionResult.capturedOutput().values().stream()
-                .map(s -> SeedChain.parse(s).seeds().get(2))
+                .map(
+                    s -> {
+                      var seeds = SeedChain.parse(s).seeds();
+                      // seed chain: [engine:class:test-template:method-invocation]
+                      Assertions.assertThat(seeds).hasSize(4);
+                      return seeds.getLast();
+                    })
                 .collect(Collectors.toSet()))
         .hasSizeBetween(8, 10); // allow some collisions. Not likely, but...
   }
 
   @Test
   public void classSeedChangesBetweenReruns() {
-    var executionResult1 = collectExecutionResults(testKitBuilder(RandomSeedInRepeatedTest.class));
-    var executionResult2 = collectExecutionResults(testKitBuilder(RandomSeedInRepeatedTest.class));
+    var executionResult1 =
+        collectExecutionResults(testKitBuilder(TestRandomSeedInRepeatedTests.class));
+    var executionResult2 =
+        collectExecutionResults(testKitBuilder(TestRandomSeedInRepeatedTests.class));
 
     Assertions.assertThat(
             Stream.of(executionResult1, executionResult2)
@@ -102,7 +111,7 @@ public class R001_RandomizedContextInjection {
   }
 
   @Randomized
-  static class RandomSeedInRepeatedTest extends NestedTest {
+  static class TestRandomSeedInRepeatedTests extends NestedTest {
     @RepeatedTest(10)
     void testMethod(PrintWriter pw, RandomizedContext ctx) {
       pw.println(ctx.getSeedChain());
@@ -110,12 +119,12 @@ public class R001_RandomizedContextInjection {
   }
 
   @Test
-  public void randomSeedVariesInParameterizedClassRepeats() {
+  public void randomSeedInParameterizedClassRepeats() {
     var executionResult =
-        collectExecutionResults(testKitBuilder(RandomSeedInParameterizedClass.class));
+        collectExecutionResults(testKitBuilder(TestRandomSeedInParameterizedClassRepeats.class));
 
-    // the seed chain should be now composed of engine:class:class-invocation:* elements.
-    // ensure they're unique for each invocation.
+    // seed chain: [engine:class:class-template:method]
+    // ensure different seeds for each test invocation.
     Assertions.assertThat(
             executionResult.capturedOutput().values().stream()
                 .map(
@@ -131,13 +140,10 @@ public class R001_RandomizedContextInjection {
   @Randomized
   @ParameterizedClass
   @ValueSource(strings = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"})
-  static class RandomSeedInParameterizedClass extends NestedTest {
+  static class TestRandomSeedInParameterizedClassRepeats extends NestedTest {
     @Test
     void testMethod(PrintWriter pw, RandomizedContext ctx) {
       pw.println(ctx.getSeedChain());
     }
   }
-
-  // TODO: test filtering of a repeated test (from the same root seed) should rerun the same test.
-  // TODO: stack trace augmentation in case of failed tests (seed).
 }

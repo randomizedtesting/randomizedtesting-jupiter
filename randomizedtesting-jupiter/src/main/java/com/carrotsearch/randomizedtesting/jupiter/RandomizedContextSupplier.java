@@ -3,18 +3,12 @@ package com.carrotsearch.randomizedtesting.jupiter;
 import java.util.Objects;
 import java.util.Random;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.BeforeClassTemplateInvocationCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
-public class RandomizedContextSupplier
-    implements ParameterResolver,
-        BeforeAllCallback,
-        BeforeClassTemplateInvocationCallback,
-        BeforeEachCallback {
+public class RandomizedContextSupplier implements ParameterResolver, BeforeAllCallback {
   private static final ExtensionContext.Namespace EXTENSION_NAMESPACE =
       ExtensionContext.Namespace.create(RandomizedContextSupplier.class);
 
@@ -63,18 +57,6 @@ public class RandomizedContextSupplier
                   initialSeed,
                   firstAndRest.rest());
             });
-
-    pushNestedRandomizedContext(extensionContext);
-  }
-
-  @Override
-  public void beforeClassTemplateInvocation(ExtensionContext extensionContext) {
-    pushNestedRandomizedContext(extensionContext);
-  }
-
-  @Override
-  public void beforeEach(ExtensionContext extensionContext) {
-    pushNestedRandomizedContext(extensionContext);
   }
 
   //
@@ -99,24 +81,20 @@ public class RandomizedContextSupplier
   // internal handling of randomized contexts within junit contexts.
   //
 
-  private void pushNestedRandomizedContext(ExtensionContext extensionContext) {
-    var store =
-        Objects.requireNonNull(
-            extensionContext.getStore(
-                ExtensionContext.StoreScope.EXTENSION_CONTEXT, EXTENSION_NAMESPACE));
-
-    store.put(
-        KEY_CONTEXT,
-        store
-            .get(KEY_CONTEXT, RandomizedContext.class)
-            .deriveNew(Thread.currentThread(), extensionContext));
-  }
-
   private RandomizedContext getRandomizedContextFor(ExtensionContext extensionContext) {
     var store =
-        Objects.requireNonNull(
-            extensionContext.getStore(
-                ExtensionContext.StoreScope.EXTENSION_CONTEXT, EXTENSION_NAMESPACE));
-    return store.get(KEY_CONTEXT, RandomizedContext.class);
+        extensionContext.getStore(
+            ExtensionContext.StoreScope.EXTENSION_CONTEXT, EXTENSION_NAMESPACE);
+
+    var thisContext = Objects.requireNonNull(store.get(KEY_CONTEXT, RandomizedContext.class));
+    if (extensionContext.getUniqueId().equals(thisContext.contextId)) {
+      return thisContext;
+    }
+
+    // No context for this context yet.
+    var parentContext = getRandomizedContextFor(extensionContext.getParent().orElseThrow());
+    thisContext = parentContext.deriveNew(Thread.currentThread(), extensionContext);
+    store.put(KEY_CONTEXT, thisContext);
+    return thisContext;
   }
 }
