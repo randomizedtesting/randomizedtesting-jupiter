@@ -28,15 +28,15 @@ import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.provider.ValueSource;
 
 @Disabled
-@ExtendWith(TestCallbackMethodOrder.DebugExt.class)
+@ExtendWith(JupiterCallbackMethodOrder.DebugExt.class)
 @ParameterizedClass
 @ValueSource(strings = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"})
-public class TestCallbackMethodOrder {
+public class JupiterCallbackMethodOrder {
   static {
     System.out.println("Static constructor.");
   }
 
-  public TestCallbackMethodOrder(String param) {
+  public JupiterCallbackMethodOrder(String param) {
     System.out.println("constructor: " + param);
   }
 
