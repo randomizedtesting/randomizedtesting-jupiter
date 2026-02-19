@@ -23,7 +23,7 @@ import org.junit.platform.engine.discovery.DiscoverySelectors;
  * Verifies that {@link RandomizedContextSupplier} properly creates and injects a {@link
  * RandomizedContext} into test callbacks and methods.
  */
-public class R001_RandomizedContextInjection {
+public class F001_RandomizedContextInjection {
   @Test
   public void fixedSeedInjectedInAllHooks() {
     assertThat(
@@ -41,6 +41,7 @@ public class R001_RandomizedContextInjection {
   static class TestFixedSeedInjectedInAllHooks extends NestedTest {
     public TestFixedSeedInjectedInAllHooks(RandomizedContext ctx) {
       Assertions.assertThat(ctx.getSeedChain().toString()).isEqualTo("[DEAD:BEEF]");
+      Assertions.assertThat(ctx.getRootSeed().toString()).isEqualTo("DEAD");
     }
 
     @BeforeAll
@@ -112,6 +113,14 @@ public class R001_RandomizedContextInjection {
         .hasSize(2);
   }
 
+  @Randomized
+  static class TestRandomSeedInRepeatedTests extends NestedTest {
+    @RepeatedTest(10)
+    void testMethod(PrintWriter pw, RandomizedContext ctx) {
+      pw.println(ctx.getSeedChain());
+    }
+  }
+
   @Test
   public void identicalDerivedSeedWithTestFiltering() {
     var executionResult1 =
@@ -146,14 +155,6 @@ public class R001_RandomizedContextInjection {
           IntStream.range(0, 10)
               .mapToObj(i -> Long.toHexString(ctx.getRandom().nextLong()))
               .collect(Collectors.joining(":")));
-    }
-  }
-
-  @Randomized
-  static class TestRandomSeedInRepeatedTests extends NestedTest {
-    @RepeatedTest(10)
-    void testMethod(PrintWriter pw, RandomizedContext ctx) {
-      pw.println(ctx.getSeedChain());
     }
   }
 

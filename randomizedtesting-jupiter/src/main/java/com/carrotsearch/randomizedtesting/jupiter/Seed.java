@@ -1,6 +1,6 @@
 package com.carrotsearch.randomizedtesting.jupiter;
 
-record Seed(long value) {
+public record Seed(long value) {
   private static final char[] HEX = "0123456789ABCDEF".toCharArray();
   static final Seed UNSPECIFIED = new Seed(0);
 

@@ -54,6 +54,14 @@ public final class RandomizedContext {
     return new SeedChain(seeds);
   }
 
+  /**
+   * @return Returns the root seed (randomization source).
+   * @see RandomizedContextSupplier.SysProps#TESTS_SEED
+   */
+  public Seed getRootSeed() {
+    return getSeedChain().seeds().getFirst();
+  }
+
   private RandomizedContext getParent() {
     return parent;
   }
