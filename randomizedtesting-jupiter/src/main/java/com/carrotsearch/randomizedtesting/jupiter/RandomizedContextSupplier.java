@@ -1,5 +1,8 @@
 package com.carrotsearch.randomizedtesting.jupiter;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -7,8 +10,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 
-public class RandomizedContextSupplier implements ParameterResolver, BeforeAllCallback {
+public class RandomizedContextSupplier
+    implements ParameterResolver, BeforeAllCallback, TestExecutionExceptionHandler {
   private static final ExtensionContext.Namespace EXTENSION_NAMESPACE =
       ExtensionContext.Namespace.create(RandomizedContextSupplier.class);
 
@@ -96,5 +101,23 @@ public class RandomizedContextSupplier implements ParameterResolver, BeforeAllCa
     thisContext = parentContext.deriveNew(Thread.currentThread(), extensionContext);
     store.put(KEY_CONTEXT, thisContext);
     return thisContext;
+  }
+
+  //
+  // exception handling and seed stack frame injection
+  //
+  static final String AUGMENTED_SEED_CLASS = "__randomizedtesting.SeedChain";
+
+  @Override
+  public void handleTestExecutionException(ExtensionContext context, Throwable throwable)
+      throws Throwable {
+    throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
+  }
+
+  private Throwable addSeedChainStackFrame(Throwable throwable, SeedChain seedChain) {
+    List<StackTraceElement> stack = new ArrayList<>(Arrays.asList(throwable.getStackTrace()));
+    stack.addFirst(new StackTraceElement(AUGMENTED_SEED_CLASS, "seed", seedChain.toString(), -1));
+    throwable.setStackTrace(stack.toArray(StackTraceElement[]::new));
+    return throwable;
   }
 }
