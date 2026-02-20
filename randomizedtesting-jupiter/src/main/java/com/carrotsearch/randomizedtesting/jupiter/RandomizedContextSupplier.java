@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -49,23 +50,35 @@ public class RandomizedContextSupplier
             CTX_KEY_RANDOMIZED_CONTEXT,
             unused -> {
               var firstAndRest =
-                  SeedChain.parse(
-                          extensionContext
-                              .getConfigurationParameter(SysProps.TESTS_SEED.propertyKey)
-                              .orElse("*"))
+                  parseRootSeed(
+                          extensionContext.getConfigurationParameter(
+                              SysProps.TESTS_SEED.propertyKey))
                       .pop();
-              var initialSeed = firstAndRest.first();
-              if (initialSeed.isUnspecified()) {
-                initialSeed = new Seed(new Random().nextLong());
-              }
+              assert !firstAndRest.first().isUnspecified();
+
               return new RandomizedContext(
                   extensionContext.getRoot().getUniqueId(),
                   null,
                   Thread.currentThread(),
                   Random::new,
-                  initialSeed,
+                  firstAndRest.first(),
                   firstAndRest.rest());
             });
+  }
+
+  /**
+   * @return Returns the constant root seed, initialized from an optional configuration parameter.
+   */
+  private static SeedChain parseRootSeed(Optional<String> rootSeedValue) {
+    var seedChain = SeedChain.parse(rootSeedValue.orElse("*"));
+    var firstAndRest = seedChain.pop();
+    if (firstAndRest.first().isUnspecified()) {
+      var recreateChain = new ArrayList<Seed>();
+      recreateChain.add(new Seed(new Random().nextLong()));
+      recreateChain.addAll(firstAndRest.rest().seeds());
+      seedChain = new SeedChain(recreateChain);
+    }
+    return seedChain;
   }
 
   //

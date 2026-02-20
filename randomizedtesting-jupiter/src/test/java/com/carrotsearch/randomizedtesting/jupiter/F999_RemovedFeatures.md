@@ -14,7 +14,10 @@ or any other way to create dynamic tests that JUnit5 offers.
 
 ## Custom test case order (`@TestCaseOrdering`)
 
-* This feature is already part of JUnit5 (`@TestMethodOrder`). 
+* This feature is already part of JUnit5 (`@TestMethodOrder`). However,
+It is technically not possible to write a reorderer that will use the root
+seed value to reorder methods consistently (because method orderers
+are run in discovery phase and execution contexts are not available then).
 
 ## Test instance creation control (`@TestCaseInstanceProvider`).
 
@@ -23,4 +26,3 @@ or any other way to create dynamic tests that JUnit5 offers.
 ## Custom event listeners (`@Listeners`).
 
 * This feature is already part of JUnit5 (`TestExecutionListener`).
-
