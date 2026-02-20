@@ -7,17 +7,21 @@ import java.util.Objects;
 import java.util.Random;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 
 public class RandomizedContextSupplier
-    implements ParameterResolver, BeforeAllCallback, TestExecutionExceptionHandler {
+    implements ParameterResolver,
+        BeforeAllCallback,
+        TestExecutionExceptionHandler,
+        LifecycleMethodExecutionExceptionHandler {
   private static final ExtensionContext.Namespace EXTENSION_NAMESPACE =
       ExtensionContext.Namespace.create(RandomizedContextSupplier.class);
 
-  private static final String KEY_CONTEXT = "randomizedContext";
+  private static final String CTX_KEY_RANDOMIZED_CONTEXT = "randomizedContext";
 
   /** System properties controlling the extension. */
   public enum SysProps {
@@ -42,7 +46,7 @@ public class RandomizedContextSupplier
         .getRoot()
         .getStore(EXTENSION_NAMESPACE)
         .computeIfAbsent(
-            KEY_CONTEXT,
+            CTX_KEY_RANDOMIZED_CONTEXT,
             unused -> {
               var firstAndRest =
                   SeedChain.parse(
@@ -91,7 +95,8 @@ public class RandomizedContextSupplier
         extensionContext.getStore(
             ExtensionContext.StoreScope.EXTENSION_CONTEXT, EXTENSION_NAMESPACE);
 
-    var thisContext = Objects.requireNonNull(store.get(KEY_CONTEXT, RandomizedContext.class));
+    var thisContext =
+        Objects.requireNonNull(store.get(CTX_KEY_RANDOMIZED_CONTEXT, RandomizedContext.class));
     if (extensionContext.getUniqueId().equals(thisContext.contextId)) {
       return thisContext;
     }
@@ -99,17 +104,42 @@ public class RandomizedContextSupplier
     // No context for this context yet.
     var parentContext = getRandomizedContextFor(extensionContext.getParent().orElseThrow());
     thisContext = parentContext.deriveNew(Thread.currentThread(), extensionContext);
-    store.put(KEY_CONTEXT, thisContext);
+    store.put(CTX_KEY_RANDOMIZED_CONTEXT, thisContext);
     return thisContext;
   }
 
   //
   // exception handling and seed stack frame injection
   //
+
   static final String AUGMENTED_SEED_CLASS = "__randomizedtesting.SeedChain";
 
   @Override
   public void handleTestExecutionException(ExtensionContext context, Throwable throwable)
+      throws Throwable {
+    throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
+  }
+
+  @Override
+  public void handleBeforeAllMethodExecutionException(ExtensionContext context, Throwable throwable)
+      throws Throwable {
+    throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
+  }
+
+  @Override
+  public void handleBeforeEachMethodExecutionException(
+      ExtensionContext context, Throwable throwable) throws Throwable {
+    throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
+  }
+
+  @Override
+  public void handleAfterEachMethodExecutionException(ExtensionContext context, Throwable throwable)
+      throws Throwable {
+    throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
+  }
+
+  @Override
+  public void handleAfterAllMethodExecutionException(ExtensionContext context, Throwable throwable)
       throws Throwable {
     throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
   }

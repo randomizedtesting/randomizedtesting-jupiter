@@ -9,5 +9,8 @@ dependencies {
 test {
     useJUnitPlatform {
         excludeTags 'nested-integration-test'
+        options {
+            jvmArgs("--sun-misc-unsafe-memory-access=deny")
+        }
     }
 }
