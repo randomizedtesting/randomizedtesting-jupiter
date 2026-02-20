@@ -5,7 +5,7 @@ pseudo-randomness in unit tests.
 
 This is a rewrite of the JUnit4-based `randomizedtesting` project.
 
-See [randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/jupiter/](the test package)
+See [the test package](randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/jupiter/)
 for current features, their requirement descriptions and migration from junit4.
 
 See [LICENSE.txt](LICENSE.txt) to make your company's lawyer happy.
