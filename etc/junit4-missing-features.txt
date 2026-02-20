@@ -1,0 +1,56 @@
+[ai generated overview of junit4 features]
+
+*. injecting Random into test methods (based on the current context). Use non-synchronized
+Random implementation. Optionally (parameter?) enable verifying that this Random is not shared
+with other threads for reproducibility.
+
+4. Shuffled test execution order and seed annotations
+   - Test method execution order is randomized by default each run
+   - @Seed on a class fixes the main seed, making execution fully deterministic
+   - @Seeds / @Seed on a method pins a per-method seed for regression coverage
+     while still running once with a fresh random seed
+
+6. Repeating tests with @Repeat
+   - @Repeat(iterations = N, useConstantSeed = true) reruns a test N times with
+     the same seed (verifies determinism or checks if failure is consistent)
+   - @Repeat(iterations = N, useConstantSeed = false) reruns with a new
+     pseudo-random seed each time (measures failure frequency)
+
+8. Timeouts
+   - Standard JUnit @Test(timeout=N) is honoured
+   - @Timeout(millis=N) annotation provides an explicit alternative
+   - Termination sequence: Thread.interrupt() → Thread.stop() → zombie
+     detection; all attempts are logged with stack traces
+
+9. Thread-leak detection
+   - Threads that escape a test's ThreadGroup boundary are killed and cause
+     a test failure
+   - Encourages explicit Thread.join() before a test method returns
+
+10. Lingering threads and advanced thread-leak control
+    - @ThreadLeakLingering(linger=N) waits up to N ms for stray threads to
+      finish naturally (useful for Executor pools or other uncontrolled threads)
+    - Additional annotations for fine-grained policy:
+        @ThreadLeakScope  – suite vs. test scope
+        @ThreadLeakAction – warn vs. fail
+        @ThreadLeakZombies – ignore vs. fail on zombie threads
+
+11. Nightly / scaled tests
+    - @Nightly marks a test that only runs when nightly mode is active
+      (-Dtests.nightly=true)
+    - scaledRandomIntBetween() and multiplier() scale input sizes based on
+      nightly vs. daily mode
+
+14. Custom test-method providers
+    - @TestMethodProviders({...}) substitutes the default (@Test-based) selector
+    - Implement TestMethodProvider to pick methods by any criteria (e.g. name
+      suffix convention)
+
+2. RandomizedTest base class and RandomizedContext
+   - Extend RandomizedTest for convenient access to a per-test Random instance
+   - Access the context directly via RandomizedContext.current()
+
+3. Randomized input generation
+   - Utility methods on RandomizedTest: randomInt(), randomIntBetween(),
+     randomBoolean(), randomFloat(), etc.
+   - Encourages testing over a broad input domain rather than fixed values
