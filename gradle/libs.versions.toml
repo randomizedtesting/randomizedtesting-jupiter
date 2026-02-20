@@ -1,5 +1,5 @@
 [versions]
-assertj = "3.27.6"
+assertj = "3.27.7"
 googleJavaFormat = "1.34.1"
 junit = "6.0.2"
 spotless = "8.2.1"
