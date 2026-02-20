@@ -9,8 +9,21 @@ dependencies {
 test {
     useJUnitPlatform {
         excludeTags 'nested-integration-test'
-        options {
-            jvmArgs("--sun-misc-unsafe-memory-access=deny")
-        }
+    }
+
+    def argProvider = objects.newInstance(UnsafeMemoryAccessArgProvider)
+    argProvider.launcher.set(javaLauncher)
+    jvmArgumentProviders.add(argProvider)
+}
+
+abstract class UnsafeMemoryAccessArgProvider implements CommandLineArgumentProvider {
+    @Nested
+    abstract Property<JavaLauncher> getLauncher()
+
+    @Override
+    Iterable<String> asArguments() {
+        launcher.get().metadata.languageVersion.asInt() >= 25
+                ? ["--sun-misc-unsafe-memory-access=deny"]
+                : []
     }
 }
