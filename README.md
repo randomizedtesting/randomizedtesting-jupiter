@@ -3,10 +3,10 @@
 A set of JUnit5 (Jupiter Engine) extensions for more controlled
 pseudo-randomness in unit tests.
 
-This is a clone of the JUnit4-based `randomizedtesting` project.
-See the following for more information:
-- [Docs](https://github.com/randomizedtesting/randomizedtesting/wiki)
-- [Bugs](https://github.com/randomizedtesting/randomizedtesting/issues)
+This is a rewrite of the JUnit4-based `randomizedtesting` project.
+
+See [randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/jupiter/](the test package)
+for current features, their requirement descriptions and migration from junit4.
 
 See [LICENSE.txt](LICENSE.txt) to make your company's lawyer happy.
 
