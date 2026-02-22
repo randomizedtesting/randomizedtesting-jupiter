@@ -5,7 +5,6 @@ Random implementation. Optionally (parameter?) enable verifying that this Random
 with other threads for reproducibility.
 
 4. Shuffled test execution order and seed annotations
-   - Test method execution order is randomized by default each run
    - @Seed on a class fixes the main seed, making execution fully deterministic
    - @Seeds / @Seed on a method pins a per-method seed for regression coverage
      while still running once with a fresh random seed
@@ -40,11 +39,6 @@ with other threads for reproducibility.
       (-Dtests.nightly=true)
     - scaledRandomIntBetween() and multiplier() scale input sizes based on
       nightly vs. daily mode
-
-14. Custom test-method providers
-    - @TestMethodProviders({...}) substitutes the default (@Test-based) selector
-    - Implement TestMethodProvider to pick methods by any criteria (e.g. name
-      suffix convention)
 
 2. RandomizedTest base class and RandomizedContext
    - Extend RandomizedTest for convenient access to a per-test Random instance
