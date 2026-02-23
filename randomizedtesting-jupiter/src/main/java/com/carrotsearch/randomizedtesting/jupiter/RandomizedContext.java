@@ -2,47 +2,39 @@ package com.carrotsearch.randomizedtesting.jupiter;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Random;
-import java.util.function.LongFunction;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 public final class RandomizedContext {
   private final RandomizedContext parent;
-  private final Thread owner;
   private final Seed seed;
   final String contextId;
 
   private final SeedChain remainingSeedChain;
 
   private final Random random;
-  private final LongFunction<Random> seedToRandomFn;
+  private final RandomFactory randomFactory;
 
   RandomizedContext(
       String contextId,
       RandomizedContext parent,
-      Thread owner,
-      LongFunction<Random> seedToRandomFn,
+      RandomFactory randomFactory,
       Seed seed,
       SeedChain remainingSeedChain) {
     this.contextId = contextId;
     this.parent = parent;
-    this.owner = owner;
     this.remainingSeedChain = remainingSeedChain;
-    this.seedToRandomFn = seedToRandomFn;
+    this.randomFactory = randomFactory;
 
     assert !seed.isUnspecified();
     this.seed = seed;
-    this.random = seedToRandomFn.apply(seed.value());
+    this.random = randomFactory.apply(seed.value());
   }
 
   @Override
   public String toString() {
-    return "Randomized context ["
-        + ("seedChain=" + getSeedChain() + ",")
-        + ("thread=" + Threads.threadName(owner))
-        + "]";
+    return "Randomized context [" + ("seedChain=" + getSeedChain() + ",") + "]";
   }
 
   SeedChain getSeedChain() {
@@ -67,20 +59,10 @@ public final class RandomizedContext {
   }
 
   public Random getRandom() {
-    if (Thread.currentThread() != owner) {
-      throw new RuntimeException(
-          String.format(
-              Locale.ROOT,
-              "This %s instance is bound to thread %s, can't access it from thread: %s",
-              RandomizedContext.class.getName(),
-              owner,
-              Thread.currentThread()));
-    }
-
     return random;
   }
 
-  RandomizedContext deriveNew(Thread thread, ExtensionContext extensionContext) {
+  RandomizedContext deriveNew(ExtensionContext extensionContext) {
     // sanity check.
     {
       var id = extensionContext.getUniqueId();
@@ -99,11 +81,6 @@ public final class RandomizedContext {
     }
 
     return new RandomizedContext(
-        extensionContext.getUniqueId(),
-        this,
-        thread,
-        seedToRandomFn,
-        nextSeed,
-        firstAndRest.rest());
+        extensionContext.getUniqueId(), this, randomFactory, nextSeed, firstAndRest.rest());
   }
 }

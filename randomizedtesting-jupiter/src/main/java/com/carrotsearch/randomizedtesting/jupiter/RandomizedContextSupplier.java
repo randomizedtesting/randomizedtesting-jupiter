@@ -3,9 +3,13 @@ package com.carrotsearch.randomizedtesting.jupiter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
@@ -26,12 +30,58 @@ public class RandomizedContextSupplier
 
   /** System properties controlling the extension. */
   public enum SysProps {
-    TESTS_SEED("tests.seed");
+    /** Initial root seed value. If empty, a random value is picked for the root seed. */
+    TESTS_SEED("tests.seed"),
+
+    /**
+     * String name of the factory used to create {@link Random} instances (see {@link
+     * RandomFactoryType} for named implementations).
+     *
+     * @see RandomFactoryType
+     */
+    TESTS_RANDOM_FACTORY("tests.random.factory"),
+
+    /**
+     * A boolean property that enables stricter sanity assertions (including forbidding
+     * thread-shared access to the returned {@link Random} instances, which makes tests more
+     * predictable).
+     */
+    TESTS_RANDOM_ASSERTING("tests.random.asserting");
 
     public final String propertyKey;
 
     SysProps(String key) {
       this.propertyKey = key;
+    }
+  }
+
+  public enum RandomFactoryType implements Supplier<RandomFactory> {
+    JDK,
+    XOROSHIRO_128_PLUS;
+
+    public static RandomFactoryType parse(String v) {
+      try {
+        return RandomFactoryType.valueOf(v.toUpperCase(Locale.ROOT));
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(
+            "Can't parse "
+                + SysProps.TESTS_RANDOM_FACTORY.propertyKey
+                + " property: "
+                + v
+                + " [valid values: "
+                + Stream.of(RandomFactoryType.values())
+                    .map(vv -> vv.name().toLowerCase(Locale.ROOT))
+                    .collect(Collectors.joining(", "))
+                + "]");
+      }
+    }
+
+    @Override
+    public RandomFactory get() {
+      return switch (this) {
+        case JDK -> Random::new;
+        case XOROSHIRO_128_PLUS -> Xoroshiro128PlusRandom::new;
+      };
     }
   }
 
@@ -41,6 +91,9 @@ public class RandomizedContextSupplier
 
   @Override
   public void beforeAll(ExtensionContext extensionContext) {
+    // Set up Random factory.
+    RandomFactory randomFactory = initializeRandomFactory(extensionContext);
+
     // Bootstrap the root store's context. Don't know if this can be done
     // in a more elegant way.
     extensionContext
@@ -59,11 +112,30 @@ public class RandomizedContextSupplier
               return new RandomizedContext(
                   extensionContext.getRoot().getUniqueId(),
                   null,
-                  Thread.currentThread(),
-                  Random::new,
+                  randomFactory,
                   firstAndRest.first(),
                   firstAndRest.rest());
             });
+  }
+
+  private static RandomFactory initializeRandomFactory(ExtensionContext extensionContext) {
+    RandomFactory randomFactory =
+        extensionContext
+            .getConfigurationParameter(SysProps.TESTS_RANDOM_FACTORY.propertyKey)
+            .map(RandomFactoryType::parse)
+            .orElse(RandomFactoryType.XOROSHIRO_128_PLUS)
+            .get();
+
+    if (extensionContext
+        .getConfigurationParameter(SysProps.TESTS_RANDOM_ASSERTING.propertyKey)
+        .map(Boolean::parseBoolean)
+        .orElse(RandomizedContextSupplier.class.desiredAssertionStatus())) {
+      var delegateFactory = randomFactory;
+      randomFactory =
+          seed -> new AssertingRandom(Thread.currentThread(), delegateFactory.apply(seed));
+    }
+
+    return randomFactory;
   }
 
   /**
@@ -82,21 +154,31 @@ public class RandomizedContextSupplier
   }
 
   //
-  // ParameterResolver: inject RandomizedContext into test methods.
+  // ParameterResolver: inject RandomizedContext and Random instances into test methods.
   //
 
   @Override
   public boolean supportsParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return parameterContext.getParameter().getType().equals(RandomizedContext.class);
+    Class<?> parameterType = parameterContext.getParameter().getType();
+    return parameterType.equals(RandomizedContext.class) || parameterType.equals(Random.class);
   }
 
   @Override
-  public RandomizedContext resolveParameter(
+  public Object resolveParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return getRandomizedContextFor(extensionContext);
+    var ctx = getRandomizedContextFor(extensionContext);
+    Class<?> parameterType = parameterContext.getParameter().getType();
+    if (parameterType.equals(RandomizedContext.class)) {
+      return ctx;
+    } else if (parameterType.equals(Random.class)) {
+      return ctx.getRandom();
+    } else {
+      throw new RuntimeException(
+          "Unexpected unsupported parameter type in resolveParameter: " + parameterType);
+    }
   }
 
   //
@@ -116,7 +198,7 @@ public class RandomizedContextSupplier
 
     // No context for this context yet.
     var parentContext = getRandomizedContextFor(extensionContext.getParent().orElseThrow());
-    thisContext = parentContext.deriveNew(Thread.currentThread(), extensionContext);
+    thisContext = parentContext.deriveNew(extensionContext);
     store.put(CTX_KEY_RANDOMIZED_CONTEXT, thisContext);
     return thisContext;
   }

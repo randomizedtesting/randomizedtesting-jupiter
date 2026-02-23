@@ -1,9 +1,5 @@
 [ai generated overview of junit4 features]
 
-*. injecting Random into test methods (based on the current context). Use non-synchronized
-Random implementation. Optionally (parameter?) enable verifying that this Random is not shared
-with other threads for reproducibility.
-
 4. Shuffled test execution order and seed annotations
    - @Seed on a class fixes the main seed, making execution fully deterministic
    - @Seeds / @Seed on a method pins a per-method seed for regression coverage
