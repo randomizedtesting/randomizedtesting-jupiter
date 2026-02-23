@@ -1,6 +1,8 @@
 package com.carrotsearch.randomizedtesting.jupiter;
 
-public class Hashing {
+/** Static hashing utilities. */
+public final class Hashing {
+  /** Bit mixer for {@code long} values. */
   public static long mix64(long k) {
     k ^= k >>> 33;
     k *= 0xff51afd7ed558ccdL;
@@ -10,7 +12,7 @@ public class Hashing {
     return k;
   }
 
-  /** String hash function redistributing over a long range. */
+  /** String hash function redistributing over a {@code long}. */
   public static long longHash(String v) {
     long h = 0;
     int length = v.length();
