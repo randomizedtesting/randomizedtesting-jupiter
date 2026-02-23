@@ -1,14 +1,15 @@
 dependencies {
     api libs.junit.jupiter
+    implementation libs.junit.jupiter.engine
 
     testImplementation libs.assertj
-    testImplementation libs.junit.jupiter.engine
     testImplementation libs.junit.platform.testkit
 }
 
 test {
     useJUnitPlatform {
         excludeTags 'nested-integration-test'
+        includeEngines 'randomizedtesting-jupiter'
     }
 
     def argProvider = objects.newInstance(UnsafeMemoryAccessArgProvider)
