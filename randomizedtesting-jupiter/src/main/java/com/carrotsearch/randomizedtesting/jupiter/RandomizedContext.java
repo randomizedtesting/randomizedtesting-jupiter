@@ -1,12 +1,14 @@
 package com.carrotsearch.randomizedtesting.jupiter;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Random;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-public final class RandomizedContext {
+public final class RandomizedContext implements Closeable {
   private final RandomizedContext parent;
   private final Seed seed;
   final String contextId;
@@ -82,5 +84,12 @@ public final class RandomizedContext {
 
     return new RandomizedContext(
         extensionContext.getUniqueId(), this, randomFactory, nextSeed, firstAndRest.rest());
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (random instanceof Closeable c) {
+      c.close();
+    }
   }
 }

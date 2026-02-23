@@ -20,6 +20,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.TestInstance;
 
 /** Verifies that {@link java.util.Random} instances are properly injected as parameters. */
 public class F003_RandomInjection {
@@ -135,7 +136,11 @@ public class F003_RandomInjection {
   class TestRandomAssertions {
     @Test
     public void testAllHooks() {
-      collectExecutionResults(testKitBuilder(T1.class))
+      collectExecutionResults(
+              testKitBuilder(T1.class)
+                  .configurationParameter(
+                      RandomizedContextSupplier.SysProps.TESTS_RANDOM_ASSERTING.propertyKey,
+                      "true"))
           .results()
           .allEvents()
           .assertThatEvents()
@@ -163,6 +168,46 @@ public class F003_RandomInjection {
             .isNotNull()
             .isExactlyInstanceOf(RuntimeException.class)
             .hasMessageContaining("This Random instance is tied to thread");
+      }
+    }
+
+    @Test
+    public void testAssertingRandomIsClosedAfterContext() {
+      collectExecutionResults(
+              testKitBuilder(T2.class)
+                  .configurationParameter(
+                      RandomizedContextSupplier.SysProps.TESTS_RANDOM_ASSERTING.propertyKey,
+                      "true"))
+          .results()
+          .allEvents()
+          .assertThatEvents()
+          .doNotHave(event(finishedWithFailure()));
+    }
+
+    @Randomized
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    static class T2 extends IgnoreInStandaloneRuns {
+      Random rnd;
+
+      @Test
+      void testMethod1(Random random) throws Exception {
+        check(random);
+      }
+
+      @Test
+      void testMethod2(Random random) throws Exception {
+        check(random);
+      }
+
+      private void check(Random random) {
+        if (rnd == null) {
+          rnd = random;
+        } else {
+          Assertions.assertThat(rnd).isNotSameAs(random);
+          Assertions.assertThatCode(() -> rnd.nextLong())
+              .isExactlyInstanceOf(RuntimeException.class)
+              .hasMessageContaining("This Random instance has been invalidated");
+        }
       }
     }
   }

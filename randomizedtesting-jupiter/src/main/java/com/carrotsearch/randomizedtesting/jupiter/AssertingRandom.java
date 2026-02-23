@@ -1,5 +1,6 @@
 package com.carrotsearch.randomizedtesting.jupiter;
 
+import java.io.Closeable;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Random;
@@ -8,7 +9,7 @@ import java.util.Random;
  * A {@link Random} with a delegate, preventing {@link Random#setSeed(long)} and locked to only be
  * usable by a single {@link Thread}.
  */
-final class AssertingRandom extends Random {
+final class AssertingRandom extends Random implements Closeable {
   private final Random delegate;
   private final Thread ownerRef;
   private final String ownerName;
@@ -23,7 +24,7 @@ final class AssertingRandom extends Random {
 
   /**
    * Creates an instance to be used by <code>owner</code> thread and delegating to <code>delegate
-   * </code> until {@link #destroy()}ed.
+   * </code> until {@link #close()}ed.
    */
   public AssertingRandom(Thread owner, Random delegate) {
     // Must be here, the only Random constructor. Has side effects on setSeed, see below.
@@ -118,7 +119,7 @@ final class AssertingRandom extends Random {
   }
 
   /** This object will no longer be usable after this method is called. */
-  void destroy() {
+  public void close() {
     this.valid = false;
   }
 
