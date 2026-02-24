@@ -33,37 +33,41 @@ import org.junit.jupiter.params.provider.ValueSource;
 @ValueSource(strings = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"})
 public class JupiterCallbackMethodOrder {
   static {
-    System.out.println("Static constructor.");
+    System.out.println("tclass: static constructor.");
   }
 
   public JupiterCallbackMethodOrder(String param) {
-    System.out.println("constructor: " + param);
+    System.out.println("tclass: constructor: " + param);
   }
 
   @BeforeAll
   public static void beforeAll() {
-    System.out.println("Before all.");
+    System.out.println("tclass: beforeAll.");
   }
 
   @AfterAll
   public static void afterAll() {
-    System.out.println("After all.");
+    System.out.println("tclass: afterAll.");
   }
 
   @BeforeEach
-  public void before() {}
+  public void before() {
+    System.out.println("tclass: beforeEach.");
+  }
 
   @AfterEach
-  public void after() {}
+  public void after() {
+    System.out.println("tclass: afterEach.");
+  }
 
   @Test
   public void b() {
-    System.out.println("Test b.");
+    System.out.println("tclass: test b.");
   }
 
   @Test
   public void a() {
-    System.out.println("Test a.");
+    System.out.println("tclass: test a.");
   }
 
   public static class DebugExt
@@ -80,7 +84,8 @@ public class JupiterCallbackMethodOrder {
           InvocationInterceptor {
 
     private static void log(String callback, ExtensionContext context) {
-      System.out.println(callback + " | " + context.getUniqueId());
+      System.out.println(
+          "ext: " + callback + "\n  " + context.getUniqueId() + "\n  " + context.getElement());
     }
 
     @Override
