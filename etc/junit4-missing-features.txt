@@ -1,6 +1,6 @@
 [ai generated overview of junit4 features]
 
-4. Shuffled test execution order and seed annotations
+4. seed annotations
    - @Seed on a class fixes the main seed, making execution fully deterministic
    - @Seeds / @Seed on a method pins a per-method seed for regression coverage
      while still running once with a fresh random seed
@@ -44,3 +44,9 @@
    - Utility methods on RandomizedTest: randomInt(), randomIntBetween(),
      randomBoolean(), randomFloat(), etc.
    - Encourages testing over a broad input domain rather than fixed values
+
+[possibly doable with a custom test engine]
+
+- predictably shuffled test execution order
+- blowing up test reps using tests.iters
+-

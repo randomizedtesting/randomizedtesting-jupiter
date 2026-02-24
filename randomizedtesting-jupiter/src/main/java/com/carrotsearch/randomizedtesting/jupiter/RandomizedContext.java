@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Random;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -76,14 +77,33 @@ public final class RandomizedContext implements Closeable {
       }
     }
 
-    var firstAndRest = this.remainingSeedChain.pop();
+    SeedChain seedChain;
+    var annotationSeed = extensionContext.getElement().map(e -> e.getAnnotation(FixSeed.class));
+    if (annotationSeed.isPresent()) {
+      seedChain = SeedChain.parse(annotationSeed.get().value());
+      for (var seed : seedChain.seeds()) {
+        if (seed.isUnspecified()) {
+          throw new RuntimeException(
+              String.format(
+                  Locale.ROOT,
+                  "@%s annotatoin must declare concrete seeds or seed chains on: %s",
+                  FixSeed.class.getName(),
+                  extensionContext.getElement().get()));
+        }
+      }
+    } else {
+      seedChain = this.remainingSeedChain;
+    }
+
+    var firstAndRest = seedChain.pop();
     var nextSeed = firstAndRest.first();
+    var remainingChain = firstAndRest.rest();
     if (nextSeed.isUnspecified()) {
       nextSeed = new Seed(this.seed.value() ^ Hashing.longHash(extensionContext.getUniqueId()));
     }
 
     return new RandomizedContext(
-        extensionContext.getUniqueId(), this, randomFactory, nextSeed, firstAndRest.rest());
+        extensionContext.getUniqueId(), this, randomFactory, nextSeed, remainingChain);
   }
 
   @Override
