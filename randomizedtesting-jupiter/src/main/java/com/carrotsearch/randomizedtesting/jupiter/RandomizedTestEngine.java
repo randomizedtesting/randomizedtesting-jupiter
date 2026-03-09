@@ -7,6 +7,7 @@ import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.TestEngine;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.UniqueId;
+import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
 import org.junit.platform.engine.support.descriptor.EngineDescriptor;
 
 /**
@@ -24,7 +25,7 @@ public class RandomizedTestEngine implements TestEngine {
   public static final String ENGINE_ID = "randomizedtesting-jupiter";
 
   /** Configuration parameter controlling the number of test iterations. Default: {@code 1}. */
-  public static final String ITERATIONS_PROPERTY = "tests.iterations";
+  public static final String ITERATIONS_PROPERTY = "tests.iters";
 
   private static final String JUPITER_ENGINE_ID = "junit-jupiter";
 
@@ -42,18 +43,34 @@ public class RandomizedTestEngine implements TestEngine {
             .getConfigurationParameters()
             .get(ITERATIONS_PROPERTY)
             .map(Integer::parseInt)
-            .orElse(1);
+            .orElse(0);
+
+    System.out.println(uniqueId);
 
     var engineDescriptor = new EngineDescriptor(uniqueId, "Randomized Testing");
     for (int i = 1; i <= iterations; i++) {
-      var iterationUniqueId = uniqueId.append("iteration", String.valueOf(i));
+      var iterationUniqueId = uniqueId.append("seed", String.valueOf(i));
       var jupiterRootId = iterationUniqueId.append("engine", JUPITER_ENGINE_ID);
       var jupiterDescriptor = jupiterEngine.discover(request, jupiterRootId);
-      var iterationDescriptor = new IterationDescriptor(iterationUniqueId, i);
+      var iterationDescriptor = new TopSeedDescriptor(iterationUniqueId, i);
       iterationDescriptor.addChild(jupiterDescriptor);
       engineDescriptor.addChild(iterationDescriptor);
     }
     return engineDescriptor;
+  }
+
+  public static class TopSeedDescriptor extends AbstractTestDescriptor {
+    private final long seed;
+
+    public TopSeedDescriptor(UniqueId uniqueId, long seed) {
+      super(uniqueId, "Seed #" + new Seed(seed));
+      this.seed = seed;
+    }
+
+    @Override
+    public Type getType() {
+      return Type.CONTAINER;
+    }
   }
 
   @Override
@@ -62,12 +79,12 @@ public class RandomizedTestEngine implements TestEngine {
     var listener = request.getEngineExecutionListener();
     listener.executionStarted(engineDescriptor);
     for (var child : engineDescriptor.getChildren()) {
-      executeIteration((IterationDescriptor) child, request);
+      executeIteration((TopSeedDescriptor) child, request);
     }
     listener.executionFinished(engineDescriptor, TestExecutionResult.successful());
   }
 
-  private void executeIteration(IterationDescriptor iterationDescriptor, ExecutionRequest request) {
+  private void executeIteration(TopSeedDescriptor iterationDescriptor, ExecutionRequest request) {
     var listener = request.getEngineExecutionListener();
     listener.executionStarted(iterationDescriptor);
     for (var jupiterDescriptor : iterationDescriptor.getChildren()) {
