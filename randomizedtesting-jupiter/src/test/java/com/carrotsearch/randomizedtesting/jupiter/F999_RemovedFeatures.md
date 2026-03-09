@@ -8,10 +8,17 @@ removed or replaced by built-in functionality in junit5.
 * This feature is already part of JUnit5: use `@ParameterizedClass`, `@ParameterizedTest`
 or any other way to create dynamic tests that JUnit5 offers.
 
-## Test groups
+## Test groups and test filtering
 
-* This feature is already part of JUnit5 (as `@Tag` annotations).
+* This feature is already part of JUnit5 in the
+form of[`@Tag` annotations](https://docs.junit.org/6.0.3/writing-tests/tagging-and-filtering.html).
 
+* Direct use of `tests.filter` and `tests.[group-name]` properties
+is not as straightforward as it was with `RandomizedRunner`. These properties
+need to be converted and passed to JUnit Jupiter using your build system's 
+facilities: system properties alone won't have any effect. Here is
+an [example for gradle](https://docs.gradle.org/current/userguide/java_testing.html#test_grouping). 
+  
 ## Custom test case order (`@TestCaseOrdering`)
 
 * This feature is already part of JUnit5 (`@TestMethodOrder`). However,
@@ -47,3 +54,9 @@ Stream<DynamicTest> includeTestMethodsWithNoAnnotations() {
         }));
 }
 ```
+
+## Repeating tests with @Repeat
+
+* Use standard JUnit5 test repetition facilities (like test templates, or `@RepeatedTest` 
+annotation). To repeat the same test with a constant seed, `@FixSeed` at class or test level.
+If the seed is not fixed, it will be different for each test repetition by default.

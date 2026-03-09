@@ -1,16 +1,5 @@
 [ai generated overview of junit4 features]
 
-4. seed annotations
-   - @Seed on a class fixes the main seed, making execution fully deterministic
-   - @Seeds / @Seed on a method pins a per-method seed for regression coverage
-     while still running once with a fresh random seed
-
-6. Repeating tests with @Repeat
-   - @Repeat(iterations = N, useConstantSeed = true) reruns a test N times with
-     the same seed (verifies determinism or checks if failure is consistent)
-   - @Repeat(iterations = N, useConstantSeed = false) reruns with a new
-     pseudo-random seed each time (measures failure frequency)
-
 8. Timeouts
    - Standard JUnit @Test(timeout=N) is honoured
    - @Timeout(millis=N) annotation provides an explicit alternative
