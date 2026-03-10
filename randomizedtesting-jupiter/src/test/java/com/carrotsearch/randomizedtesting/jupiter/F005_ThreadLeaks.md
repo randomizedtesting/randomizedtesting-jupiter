@@ -19,7 +19,7 @@ public class TestClass {
 }
 ```
 
-* The extension is only functional in sequential mode. It should emit a warning and do nothing if tests are
+* The extension is **only functional in sequential mode**. It should emit a warning and do nothing if tests are
 run in concurrent mode.
 
 * Occasionally there will be threads that cannot be joined but will eventually terminate. One can specify an additional
@@ -38,6 +38,10 @@ public class TestClass {
 }
 ```
 
+* In certain cases, system threads or other threads beyond the test's control may be started and cannot be terminated
+within the test's scope. The `@DetectThreadLeaks.ExcludeThreads` annotation can provide programmatic filters which
+tell the extension to ignore certain threads.
+
 ## Migration notes (from randomizedtesting for junit4)
 
-* 
+
