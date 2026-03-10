@@ -30,4 +30,18 @@ public @interface DetectThreadLeaks {
     /** Check for leaked threads after each individual test method. */
     TEST
   }
+
+  /**
+   * Milliseconds to wait for leaked threads to self-terminate before declaring a failure. If all
+   * leaked threads terminate within this window, the test passes. Default is 0 (no lingering).
+   *
+   * <p>Place this annotation on the same class as {@link DetectThreadLeaks}.
+   */
+  @Target({ElementType.TYPE, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Documented
+  @Inherited
+  @interface LingerTime {
+    int millis();
+  }
 }
