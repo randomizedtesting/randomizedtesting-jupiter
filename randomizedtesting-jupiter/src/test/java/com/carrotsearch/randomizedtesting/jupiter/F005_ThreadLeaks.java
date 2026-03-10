@@ -249,6 +249,100 @@ public class F005_ThreadLeaks {
     }
   }
 
+  @Nested
+  class TestExcludeThreads {
+    @Test
+    void excludedThreadDoesNotFail() {
+      collectExecutionResults(testKitBuilder(ExcludedByClassFilter.class))
+          .results()
+          .allEvents()
+          .assertThatEvents()
+          .doNotHave(event(finishedWithFailure()));
+    }
+
+    @Test
+    void nonExcludedThreadStillFails() {
+      collectExecutionResults(testKitBuilder(NonExcludedStillFails.class))
+          .results()
+          .allEvents()
+          .finished()
+          .failed()
+          .assertEventsMatchExactly(event(finishedWithFailure(instanceOf(AssertionError.class))));
+    }
+
+    @Test
+    void methodAndClassFiltersStackHierarchically() {
+      collectExecutionResults(testKitBuilder(HierarchicalFilters.class))
+          .results()
+          .allEvents()
+          .assertThatEvents()
+          .doNotHave(event(finishedWithFailure()));
+    }
+
+    // Class filter excludes "excluded-a-*"; the leaked thread matches → pass.
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
+    @DetectThreadLeaks.ExcludeThreads(ExcludeNamedAFilter.class)
+    static class ExcludedByClassFilter extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod() {
+        startNamedThread("excluded-a-1");
+      }
+    }
+
+    // Class filter excludes "excluded-a-*"; leaked thread is unnamed → still detected → fail.
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
+    @DetectThreadLeaks.ExcludeThreads(ExcludeNamedAFilter.class)
+    static class NonExcludedStillFails extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod() {
+        startSleepingThread();
+      }
+    }
+
+    // Class filter excludes "excluded-a-*", method filter excludes "excluded-b-*";
+    // both threads are started → both excluded → pass.
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
+    @DetectThreadLeaks.ExcludeThreads(ExcludeNamedAFilter.class)
+    static class HierarchicalFilters extends IgnoreInStandaloneRuns {
+      @Test
+      @DetectThreadLeaks.ExcludeThreads(ExcludeNamedBFilter.class)
+      void testMethod() {
+        startNamedThread("excluded-a-1");
+        startNamedThread("excluded-b-1");
+      }
+    }
+  }
+
+  /** Predicate that excludes threads whose names start with "excluded-a-". */
+  public static class ExcludeNamedAFilter implements java.util.function.Predicate<Thread> {
+    @Override
+    public boolean test(Thread t) {
+      return t.getName().startsWith("excluded-a-");
+    }
+  }
+
+  /** Predicate that excludes threads whose names start with "excluded-b-". */
+  public static class ExcludeNamedBFilter implements java.util.function.Predicate<Thread> {
+    @Override
+    public boolean test(Thread t) {
+      return t.getName().startsWith("excluded-b-");
+    }
+  }
+
+  private static void startNamedThread(String name) {
+    var t =
+        new Thread(
+            () -> {
+              try {
+                Thread.sleep(TimeUnit.MINUTES.toMillis(1));
+              } catch (InterruptedException ignored) {
+              }
+            },
+            name);
+    t.setDaemon(true);
+    t.start();
+  }
+
   /** Starts a daemon thread that sleeps long enough to be observable as a leak. */
   private static void startSleepingThread() {
     var t =

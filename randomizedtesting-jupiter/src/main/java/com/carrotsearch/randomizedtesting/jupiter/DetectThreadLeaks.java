@@ -6,6 +6,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.function.Predicate;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -35,7 +36,8 @@ public @interface DetectThreadLeaks {
    * Milliseconds to wait for leaked threads to self-terminate before declaring a failure. If all
    * leaked threads terminate within this window, the test passes. Default is 0 (no lingering).
    *
-   * <p>Place this annotation on the same class as {@link DetectThreadLeaks}.
+   * <p>Place this annotation on the same class or method as {@link DetectThreadLeaks}. A
+   * method-level annotation takes precedence over a class-level one.
    */
   @Target({ElementType.TYPE, ElementType.METHOD})
   @Retention(RetentionPolicy.RUNTIME)
@@ -43,5 +45,20 @@ public @interface DetectThreadLeaks {
   @Inherited
   @interface LingerTime {
     int millis();
+  }
+
+  /**
+   * Excludes threads matched by any of the given {@link Predicate} classes from leak detection. A
+   * thread is excluded when at least one predicate returns {@code true} for it.
+   *
+   * <p>Annotations are collected hierarchically: the test method, then the class, then each
+   * superclass, and the filters from all levels are combined. Place on the same class or method as
+   * {@link DetectThreadLeaks}.
+   */
+  @Target({ElementType.TYPE, ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Documented
+  @interface ExcludeThreads {
+    Class<? extends Predicate<Thread>>[] value();
   }
 }
