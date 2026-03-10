@@ -343,6 +343,72 @@ public class F005_ThreadLeaks {
     t.start();
   }
 
+  @Nested
+  class TestUncaughtExceptions {
+    @Test
+    void uncaughtExceptionFailsTheTest() {
+      collectExecutionResults(testKitBuilder(UncaughtInTestMethod.class))
+          .results()
+          .allEvents()
+          .finished()
+          .failed()
+          .assertEventsMatchExactly(
+              event(
+                  finishedWithFailure(
+                      instanceOf(AssertionError.class),
+                      new Condition<>(
+                          t ->
+                              t.getCause() instanceof RuntimeException rc
+                                  && "uncaught-test-exception".equals(rc.getMessage()),
+                          "cause is the original RuntimeException"))));
+    }
+
+    @Test
+    void uncaughtExceptionsWithThreadLeaksAreNotReported() {
+      collectExecutionResults(testKitBuilder(UncaughtWithLeak.class))
+          .results()
+          .allEvents()
+          .finished()
+          .failed()
+          .assertEventsMatchExactly(
+              event(
+                  finishedWithFailure(
+                      instanceOf(AssertionError.class),
+                      new Condition<>(t -> t.getCause() == null, "cause is empty."))));
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
+    static class UncaughtInTestMethod extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod() throws InterruptedException {
+        var t =
+            new Thread(
+                () -> {
+                  throw new RuntimeException("uncaught-test-exception");
+                });
+        t.start();
+        t.join();
+      }
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
+    static class UncaughtWithLeak extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod() {
+        var t1 =
+            new Thread(
+                () -> {
+                  try {
+                    Thread.sleep(TimeUnit.MINUTES.toMillis(1));
+                  } catch (InterruptedException ignored) {
+                    throw new RuntimeException("uncaught-test-exception");
+                  }
+                });
+        t1.start();
+      }
+    }
+  }
+
   /** Starts a daemon thread that sleeps long enough to be observable as a leak. */
   private static void startSleepingThread() {
     var t =
