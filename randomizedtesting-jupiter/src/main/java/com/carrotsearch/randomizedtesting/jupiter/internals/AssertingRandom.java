@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.jupiter;
+package com.carrotsearch.randomizedtesting.jupiter.internals;
 
 import java.io.Closeable;
 import java.util.Locale;
@@ -9,7 +9,7 @@ import java.util.Random;
  * A {@link Random} with a delegate, preventing {@link Random#setSeed(long)} and locked to only be
  * usable by a single {@link Thread}.
  */
-final class AssertingRandom extends Random implements Closeable {
+public final class AssertingRandom extends Random implements Closeable {
   private final Random delegate;
   private final Thread ownerRef;
   private final String ownerName;

@@ -11,8 +11,6 @@ import java.util.stream.Stream;
  * contexts.
  */
 public record SeedChain(List<Seed> seeds) {
-  private static final SeedChain EMPTY = new SeedChain(List.of());
-
   public static SeedChain parse(String chain) {
     return new SeedChain(
         Stream.of(chain.replaceAll("[\\[\\]]", "").split("[:]"))
@@ -37,17 +35,5 @@ public record SeedChain(List<Seed> seeds) {
             .map(v -> v == Seed.UNSPECIFIED ? "*" : v.toString())
             .collect(Collectors.joining(":"))
         + "]";
-  }
-
-  record FirstAndRest(Seed first, SeedChain rest) {}
-
-  FirstAndRest pop() {
-    if (seeds.isEmpty()) {
-      return new FirstAndRest(Seed.UNSPECIFIED, SeedChain.EMPTY);
-    }
-
-    var first = seeds.iterator().next();
-    var rest = new SeedChain(seeds.subList(1, seeds.size()));
-    return new FirstAndRest(first, rest);
   }
 }

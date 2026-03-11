@@ -1,5 +1,6 @@
-package com.carrotsearch.randomizedtesting.jupiter;
+package com.carrotsearch.randomizedtesting.jupiter.internals;
 
+import com.carrotsearch.randomizedtesting.jupiter.Hashing;
 import java.util.Random;
 
 /**
@@ -7,7 +8,7 @@ import java.util.Random;
  *
  * @see "https://prng.di.unimi.it/"
  */
-final class Xoroshiro128PlusRandom extends Random {
+public final class Xoroshiro128PlusRandom extends Random {
   private static final double DOUBLE_UNIT = 0x1.0p-53; // 1.0 / (1L << 53);
   private static final float FLOAT_UNIT = 0x1.0p-24f; // 1.0 / (1L << 24);
 
@@ -17,12 +18,12 @@ final class Xoroshiro128PlusRandom extends Random {
     // Must be here, the only Random constructor. Has side-effects on setSeed, see below.
     super(0);
 
-    s0 = Hashing.mix64(seed);
-    s1 = Hashing.mix64(s0);
+    s0 = Hashing.hash(seed);
+    s1 = Hashing.hash(s0);
 
     if (s0 == 0 && s1 == 0) {
-      s0 = Hashing.mix64(0xdeadbeefL);
-      s1 = Hashing.mix64(s0);
+      s0 = Hashing.hash(0xdeadbeefL);
+      s1 = Hashing.hash(s0);
     }
   }
 

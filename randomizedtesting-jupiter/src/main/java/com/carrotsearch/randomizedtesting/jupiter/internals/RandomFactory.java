@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.jupiter;
+package com.carrotsearch.randomizedtesting.jupiter.internals;
 
 import java.util.Random;
 import java.util.function.LongFunction;

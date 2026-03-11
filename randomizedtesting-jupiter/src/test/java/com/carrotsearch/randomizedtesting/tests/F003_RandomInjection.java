@@ -4,7 +4,7 @@ import static com.carrotsearch.randomizedtesting.tests.infra.TestInfra.*;
 import static org.junit.platform.testkit.engine.EventConditions.*;
 
 import com.carrotsearch.randomizedtesting.jupiter.Randomized;
-import com.carrotsearch.randomizedtesting.jupiter.RandomizedContextSupplier;
+import com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension;
 import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import java.io.PrintWriter;
 import java.util.Locale;
@@ -81,7 +81,7 @@ public class F003_RandomInjection {
                       collectExecutionResults(
                           testKitBuilder(T1.class)
                               .configurationParameter(
-                                  RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey,
+                                  RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey,
                                   "deadbeef")))
               .toList();
 
@@ -94,7 +94,7 @@ public class F003_RandomInjection {
 
     @TestFactory
     public Stream<DynamicTest> checkAllRandomFactories() {
-      return Stream.of(RandomizedContextSupplier.RandomFactoryType.values())
+      return Stream.of(RandomizedContextExtension.RandomFactoryType.values())
           .map(
               t -> {
                 return DynamicTest.dynamicTest(
@@ -106,11 +106,11 @@ public class F003_RandomInjection {
                           collectExecutionResults(
                               testKitBuilder(T1.class)
                                   .configurationParameter(
-                                      RandomizedContextSupplier.SysProps.TESTS_RANDOM_FACTORY
+                                      RandomizedContextExtension.SysProps.TESTS_RANDOM_FACTORY
                                           .propertyKey,
                                       t.name().toLowerCase(Locale.ROOT))
                                   .configurationParameter(
-                                      RandomizedContextSupplier.SysProps.TESTS_RANDOM_ASSERTING
+                                      RandomizedContextExtension.SysProps.TESTS_RANDOM_ASSERTING
                                           .propertyKey,
                                       "false"));
                       executionResult
@@ -141,7 +141,7 @@ public class F003_RandomInjection {
       collectExecutionResults(
               testKitBuilder(T1.class)
                   .configurationParameter(
-                      RandomizedContextSupplier.SysProps.TESTS_RANDOM_ASSERTING.propertyKey,
+                      RandomizedContextExtension.SysProps.TESTS_RANDOM_ASSERTING.propertyKey,
                       "true"))
           .results()
           .allEvents()
@@ -178,7 +178,7 @@ public class F003_RandomInjection {
       collectExecutionResults(
               testKitBuilder(T2.class)
                   .configurationParameter(
-                      RandomizedContextSupplier.SysProps.TESTS_RANDOM_ASSERTING.propertyKey,
+                      RandomizedContextExtension.SysProps.TESTS_RANDOM_ASSERTING.propertyKey,
                       "true"))
           .results()
           .allEvents()

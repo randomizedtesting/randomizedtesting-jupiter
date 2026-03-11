@@ -6,7 +6,7 @@ import static org.junit.platform.testkit.engine.TestExecutionResultConditions.*;
 
 import com.carrotsearch.randomizedtesting.jupiter.Randomized;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
-import com.carrotsearch.randomizedtesting.jupiter.RandomizedContextSupplier;
+import com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension;
 import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
@@ -28,7 +28,7 @@ public class F002_SeedRecovery {
       collectExecutionResults(
               testKitBuilder(AtTestLevel.class)
                   .configurationParameter(
-                      RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey, "dead"))
+                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "dead"))
           .results()
           .testEvents()
           .finished()
@@ -63,7 +63,7 @@ public class F002_SeedRecovery {
       collectExecutionResults(
               testKitBuilder(e.clazz())
                   .configurationParameter(
-                      RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey, "dead:beef:cafe"))
+                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "dead:beef:cafe"))
           .results()
           .allEvents()
           .finished()
@@ -77,7 +77,7 @@ public class F002_SeedRecovery {
                           t -> {
                             Assertions.assertThat(t.getStackTrace()[0].toString())
                                 .contains(
-                                    RandomizedContextSupplier.AUGMENTED_SEED_CLASS
+                                    RandomizedContextExtension.AUGMENTED_SEED_CLASS
                                         + ".seed("
                                         + e.expectedSeed
                                         + ")");

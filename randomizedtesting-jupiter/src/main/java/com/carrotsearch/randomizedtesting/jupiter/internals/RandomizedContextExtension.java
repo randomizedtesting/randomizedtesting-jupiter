@@ -1,5 +1,8 @@
-package com.carrotsearch.randomizedtesting.jupiter;
+package com.carrotsearch.randomizedtesting.jupiter.internals;
 
+import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
+import com.carrotsearch.randomizedtesting.jupiter.Seed;
+import com.carrotsearch.randomizedtesting.jupiter.SeedChain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,13 +21,13 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 
-public class RandomizedContextSupplier
+public class RandomizedContextExtension
     implements ParameterResolver,
         BeforeAllCallback,
         TestExecutionExceptionHandler,
         LifecycleMethodExecutionExceptionHandler {
   private static final ExtensionContext.Namespace EXTENSION_NAMESPACE =
-      ExtensionContext.Namespace.create(RandomizedContextSupplier.class);
+      ExtensionContext.Namespace.create(RandomizedContextExtension.class);
 
   private static final String CTX_KEY_RANDOMIZED_CONTEXT = "randomizedContext";
 
@@ -103,13 +106,13 @@ public class RandomizedContextSupplier
             CTX_KEY_RANDOMIZED_CONTEXT,
             unused -> {
               var firstAndRest =
-                  parseRootSeed(
+                  FirstAndRest.from(
+                      parseRootSeed(
                           extensionContext.getConfigurationParameter(
-                              SysProps.TESTS_SEED.propertyKey))
-                      .pop();
+                              SysProps.TESTS_SEED.propertyKey)));
               assert !firstAndRest.first().isUnspecified();
 
-              return new RandomizedContext(
+              return new RandomizedContextImpl(
                   extensionContext.getRoot().getUniqueId(),
                   null,
                   randomFactory,
@@ -129,7 +132,7 @@ public class RandomizedContextSupplier
     if (extensionContext
         .getConfigurationParameter(SysProps.TESTS_RANDOM_ASSERTING.propertyKey)
         .map(Boolean::parseBoolean)
-        .orElse(RandomizedContextSupplier.class.desiredAssertionStatus())) {
+        .orElse(RandomizedContextExtension.class.desiredAssertionStatus())) {
       var delegateFactory = randomFactory;
       randomFactory =
           seed -> new AssertingRandom(Thread.currentThread(), delegateFactory.apply(seed));
@@ -143,7 +146,7 @@ public class RandomizedContextSupplier
    */
   private static SeedChain parseRootSeed(Optional<String> rootSeedValue) {
     var seedChain = SeedChain.parse(rootSeedValue.orElse("*"));
-    var firstAndRest = seedChain.pop();
+    var firstAndRest = FirstAndRest.from(seedChain);
     if (firstAndRest.first().isUnspecified()) {
       var recreateChain = new ArrayList<Seed>();
       recreateChain.add(new Seed(new Random().nextLong()));
@@ -185,13 +188,13 @@ public class RandomizedContextSupplier
   // internal handling of randomized contexts within junit contexts.
   //
 
-  private RandomizedContext getRandomizedContextFor(ExtensionContext extensionContext) {
+  private RandomizedContextImpl getRandomizedContextFor(ExtensionContext extensionContext) {
     var store =
         extensionContext.getStore(
             ExtensionContext.StoreScope.EXTENSION_CONTEXT, EXTENSION_NAMESPACE);
 
     var thisContext =
-        Objects.requireNonNull(store.get(CTX_KEY_RANDOMIZED_CONTEXT, RandomizedContext.class));
+        Objects.requireNonNull(store.get(CTX_KEY_RANDOMIZED_CONTEXT, RandomizedContextImpl.class));
     if (extensionContext.getUniqueId().equals(thisContext.contextId)) {
       return thisContext;
     }

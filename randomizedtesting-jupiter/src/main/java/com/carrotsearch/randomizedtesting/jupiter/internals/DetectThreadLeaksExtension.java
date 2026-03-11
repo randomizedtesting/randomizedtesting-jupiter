@@ -1,5 +1,6 @@
-package com.carrotsearch.randomizedtesting.jupiter;
+package com.carrotsearch.randomizedtesting.jupiter.internals;
 
+import com.carrotsearch.randomizedtesting.jupiter.DetectThreadLeaks;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;

@@ -5,8 +5,8 @@ import static org.junit.platform.testkit.engine.EventConditions.*;
 
 import com.carrotsearch.randomizedtesting.jupiter.Randomized;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
-import com.carrotsearch.randomizedtesting.jupiter.RandomizedContextSupplier;
 import com.carrotsearch.randomizedtesting.jupiter.SeedChain;
+import com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension;
 import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import java.io.PrintWriter;
 import java.util.stream.Collectors;
@@ -25,7 +25,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 
 /**
- * Verifies that {@link RandomizedContextSupplier} properly creates and injects a {@link
+ * Verifies that {@link RandomizedContextExtension} properly creates and injects a {@link
  * RandomizedContext} into test callbacks and methods.
  */
 public class F001_RandomizedContextInjection {
@@ -36,7 +36,7 @@ public class F001_RandomizedContextInjection {
       collectExecutionResults(
               testKitBuilder(T1.class)
                   .configurationParameter(
-                      RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey, "dead:beef:cafe"))
+                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "dead:beef:cafe"))
           .results()
           .allEvents()
           .assertThatEvents()
@@ -163,7 +163,7 @@ public class F001_RandomizedContextInjection {
           collectExecutionResults(
               testKitBuilder(TestIdenticalRandomWithTestFiltering.class)
                   .configurationParameter(
-                      RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey, "deadbeed"));
+                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "deadbeed"));
 
       // select just one of the tests and pick it by its unique id. then re-run it.
       // the seed/ random should be identical because the re-run starts from the same root
@@ -174,7 +174,7 @@ public class F001_RandomizedContextInjection {
           collectExecutionResults(
               testKitBuilder()
                   .configurationParameter(
-                      RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey, "deadbeed")
+                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "deadbeed")
                   .selectors(DiscoverySelectors.selectUniqueId(pickedTest)));
 
       String o1 = executionResult1.capturedOutput().get(pickedTest);

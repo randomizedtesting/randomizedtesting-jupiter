@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.jupiter;
+package com.carrotsearch.randomizedtesting.jupiter.internals;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,16 +6,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /** Collects uncaught exceptions from threads during test execution. */
-class UncaughtExceptionsHandler implements Thread.UncaughtExceptionHandler {
+public final class UncaughtExceptionsHandler implements Thread.UncaughtExceptionHandler {
   private static final Logger LOGGER = Logger.getLogger(UncaughtExceptionsHandler.class.getName());
 
-  record UncaughtException(String threadName, Throwable error) {}
+  public record UncaughtException(String threadName, Throwable error) {}
 
   private final Thread.UncaughtExceptionHandler previous;
   private final List<UncaughtException> exceptions = new ArrayList<>();
   private boolean reporting = true;
 
-  UncaughtExceptionsHandler(Thread.UncaughtExceptionHandler previous) {
+  public UncaughtExceptionsHandler(Thread.UncaughtExceptionHandler previous) {
     this.previous = previous;
   }
 
@@ -30,19 +30,19 @@ class UncaughtExceptionsHandler implements Thread.UncaughtExceptionHandler {
     if (previous != null) previous.uncaughtException(t, e);
   }
 
-  void stopReporting() {
+  public void stopReporting() {
     synchronized (exceptions) {
       reporting = false;
     }
   }
 
-  void resumeReporting() {
+  public void resumeReporting() {
     synchronized (exceptions) {
       reporting = true;
     }
   }
 
-  List<UncaughtException> getAndClear() {
+  public List<UncaughtException> getAndClear() {
     synchronized (exceptions) {
       var copy = new ArrayList<>(exceptions);
       exceptions.clear();
@@ -51,7 +51,7 @@ class UncaughtExceptionsHandler implements Thread.UncaughtExceptionHandler {
   }
 
   /** Restores the previous default uncaught exception handler. */
-  void restore() {
+  public void restore() {
     Thread.setDefaultUncaughtExceptionHandler(previous);
   }
 }

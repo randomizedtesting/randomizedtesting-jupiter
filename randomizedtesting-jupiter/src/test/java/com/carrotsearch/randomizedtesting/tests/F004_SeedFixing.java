@@ -6,7 +6,7 @@ import static org.junit.platform.testkit.engine.EventConditions.*;
 import com.carrotsearch.randomizedtesting.jupiter.FixSeed;
 import com.carrotsearch.randomizedtesting.jupiter.Randomized;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
-import com.carrotsearch.randomizedtesting.jupiter.RandomizedContextSupplier;
+import com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension;
 import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Nested;
@@ -22,7 +22,7 @@ public class F004_SeedFixing {
       collectExecutionResults(
               testKitBuilder(T1.class)
                   .configurationParameter(
-                      RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey, "dead:beef:cafe"))
+                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "dead:beef:cafe"))
           .results()
           .allEvents()
           .assertThatEvents()
@@ -43,7 +43,7 @@ public class F004_SeedFixing {
       collectExecutionResults(
               testKitBuilder(T2.class)
                   .configurationParameter(
-                      RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey, "dead"))
+                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "dead"))
           .results()
           .allEvents()
           .assertThatEvents()
@@ -83,7 +83,7 @@ public class F004_SeedFixing {
       collectExecutionResults(
               testKitBuilder(T4.class)
                   .configurationParameter(
-                      RandomizedContextSupplier.SysProps.TESTS_SEED.propertyKey, "dead"))
+                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "dead"))
           .results()
           .allEvents()
           .assertThatEvents()
