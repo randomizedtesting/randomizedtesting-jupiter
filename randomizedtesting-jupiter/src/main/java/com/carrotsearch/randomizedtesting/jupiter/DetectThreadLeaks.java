@@ -55,11 +55,13 @@ public @interface DetectThreadLeaks {
    *
    * <p>Annotations are collected hierarchically from the class and its superclasses, and the
    * filters from all levels are combined.
+   *
+   * @see SystemThreadFilter
    */
   @Target({ElementType.TYPE})
   @Retention(RetentionPolicy.RUNTIME)
   @Documented
   @interface ExcludeThreads {
-    Class<? extends Predicate<Thread>>[] value();
+    Class<? extends Predicate<Thread>>[] value() default {SystemThreadFilter.class};
   }
 }

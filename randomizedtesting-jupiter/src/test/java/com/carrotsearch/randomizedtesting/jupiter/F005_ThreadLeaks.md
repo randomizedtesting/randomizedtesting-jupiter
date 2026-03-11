@@ -71,9 +71,7 @@ public class TestClass {
 
 ## Migration notes (from randomizedtesting for junit4)
 
-* `@ThreadLeakScope` is replaced with `@DetectThreadLeaks(scope = ...)`. The `NONE` scope
-  (disabling all checks) maps to `@DetectThreadLeaks(scope = DetectThreadLeaks.Scope.NONE)`,
-  or simply remove `@DetectThreadLeaks` from the class entirely.
+* `@ThreadLeakScope` is replaced with `@DetectThreadLeaks(scope = ...)`.
   The default scope changed: the old default was `TEST`; the new default is `SUITE`.
 
 * `@ThreadLeakLingering(linger = N)` is replaced with `@DetectThreadLeaks.LingerTime(millis = N)`.
@@ -98,3 +96,11 @@ public class TestClass {
 * `@ThreadLeakGroup` — the group scope (`ALL` / `MAIN` / `TESTGROUP`) is not configurable.
   The extension always uses `Thread.getAllStackTraces()`, equivalent to the old `ALL` group, and
   filters out known system threads automatically.
+
+* There are subtle differences in the implementation concerning how threads are interrupted (and
+  how retry attempts are implemented). In particular, the number of retries and their period is not
+  user-controlled (`tests.killattempts`, `tests.killwait` properties in `RandomizedRunner`).
+
+* The default value of `@DetectThreadLeaks.ExcludeThreads` points at `SystemThreadFilter`. There is
+  no `defaultFilters` parameter; just use the `SystemThreadFilter` in any custom declarations filter
+  declarations.

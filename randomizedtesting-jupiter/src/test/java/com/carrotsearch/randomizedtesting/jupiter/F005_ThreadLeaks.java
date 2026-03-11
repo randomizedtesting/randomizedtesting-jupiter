@@ -8,6 +8,7 @@ import com.carrotsearch.randomizedtesting.jupiter.infra.IgnoreInStandaloneRuns;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.assertj.core.api.Condition;
@@ -278,7 +279,6 @@ public class F005_ThreadLeaks {
           .assertEventsMatchExactly(event(finishedWithFailure(instanceOf(AssertionError.class))));
     }
 
-    // Class linger 10s; thread sleeps 100ms → terminates before linger expires → pass.
     @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
     @DetectThreadLeaks.LingerTime(millis = 10_000)
     static class ShortLivedLeak extends IgnoreInStandaloneRuns {
@@ -288,7 +288,6 @@ public class F005_ThreadLeaks {
       }
     }
 
-    // Class linger 50ms; thread sleeps 1 min → outlasts linger → fail.
     @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
     @DetectThreadLeaks.LingerTime(millis = 50)
     static class LongLivedLeak extends IgnoreInStandaloneRuns {
@@ -298,7 +297,6 @@ public class F005_ThreadLeaks {
       }
     }
 
-    // Method linger 10s overrides absent class linger; thread sleeps 100ms → pass.
     @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
     static class MethodLingerOverridesAbsentClassLinger extends IgnoreInStandaloneRuns {
       @Test
@@ -308,7 +306,6 @@ public class F005_ThreadLeaks {
       }
     }
 
-    // Method linger 10s overrides class linger 50ms; thread sleeps 100ms → pass.
     @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
     @DetectThreadLeaks.LingerTime(millis = 50)
     static class MethodLingerOverridesClassLinger extends IgnoreInStandaloneRuns {
@@ -372,7 +369,23 @@ public class F005_ThreadLeaks {
           .doNotHave(event(finishedWithFailure()));
     }
 
-    // Class filter excludes "excluded-a-*"; the leaked thread matches → pass.
+    @Test
+    void forkJoinPoolStartup() {
+      collectExecutionResults(testKitBuilder(SysFjPool.class))
+          .results()
+          .allEvents()
+          .assertThatEvents()
+          .doNotHave(event(finishedWithFailure()));
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
+    static class SysFjPool extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod() {
+        ForkJoinPool.commonPool().submit(() -> {}).join();
+      }
+    }
+
     @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
     @DetectThreadLeaks.ExcludeThreads(ExcludeNamedAFilter.class)
     static class ExcludedByClassFilter extends IgnoreInStandaloneRuns {
@@ -382,7 +395,6 @@ public class F005_ThreadLeaks {
       }
     }
 
-    // Class filter excludes "excluded-a-*"; leaked thread is unnamed → still detected → fail.
     @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
     @DetectThreadLeaks.ExcludeThreads(ExcludeNamedAFilter.class)
     static class NonExcludedStillFails extends IgnoreInStandaloneRuns {

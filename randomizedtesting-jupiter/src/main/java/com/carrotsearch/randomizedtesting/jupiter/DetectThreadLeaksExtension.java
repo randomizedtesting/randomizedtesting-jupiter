@@ -1,5 +1,6 @@
 package com.carrotsearch.randomizedtesting.jupiter;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -27,8 +28,8 @@ public class DetectThreadLeaksExtension
   private static final String CONCURRENT_KEY = "concurrent";
   private static final String UNCAUGHT_EXCEPTION_HANDLER_KEY = "uncaught-exception-handler";
 
-  /** Total time budget (ms) to join interrupted threads before giving up. */
-  private static final long INTERRUPT_JOIN_MS = 2_000L;
+  /** Total time budget to join interrupted threads before giving up. */
+  private static final Duration INTERRUPT_JOIN_MS = Duration.ofSeconds(3);
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -124,32 +125,45 @@ public class DetectThreadLeaksExtension
     return classAnn == null ? 0 : classAnn.millis();
   }
 
+  @DetectThreadLeaks.ExcludeThreads()
+  private static class AnnotationDefaultsSource {}
+
   /**
    * Collects {@link DetectThreadLeaks.ExcludeThreads} filter classes from the entire hierarchy
    * (method to class to superclasses) and returns a combined predicate that excludes a thread when
    * any filter matches it.
    */
   private static Predicate<Thread> buildFilter(ExtensionContext context) {
-    var filterClasses = new LinkedHashSet<Predicate<Thread>>();
+    List<DetectThreadLeaks.ExcludeThreads> excludeThreads = new ArrayList<>();
 
     for (Class<?> cls = context.getRequiredTestClass(); cls != null; cls = cls.getSuperclass()) {
       var ann = cls.getAnnotation(DetectThreadLeaks.ExcludeThreads.class);
       if (ann != null) {
-        for (var c : ann.value()) {
-          try {
-            filterClasses.add(c.getDeclaredConstructor().newInstance());
-          } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Cannot instantiate thread filter: " + cls.getName(), e);
-          }
+        excludeThreads.add(ann);
+      }
+    }
+
+    if (excludeThreads.isEmpty()) {
+      excludeThreads.add(
+          AnnotationDefaultsSource.class.getAnnotation(DetectThreadLeaks.ExcludeThreads.class));
+    }
+
+    var filterClasses = new LinkedHashSet<Predicate<Thread>>();
+    for (var ann : excludeThreads) {
+      for (var cls : ann.value()) {
+        try {
+          filterClasses.add(cls.getDeclaredConstructor().newInstance());
+        } catch (ReflectiveOperationException e) {
+          throw new RuntimeException("Cannot instantiate thread filter: " + cls.getName(), e);
         }
       }
     }
 
     if (filterClasses.isEmpty()) {
       return t -> false;
+    } else {
+      return t -> filterClasses.stream().anyMatch(p -> p.test(t));
     }
-
-    return t -> filterClasses.stream().anyMatch(p -> p.test(t));
   }
 
   private static boolean isConcurrentMode(ExtensionContext context) {
@@ -197,11 +211,17 @@ public class DetectThreadLeaksExtension
         }
 
         try {
+          // Send an interrupt to all threads.
           leaked.keySet().forEach(Thread::interrupt);
-          long joinDeadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(INTERRUPT_JOIN_MS);
+
+          // Wait for all those threads.
+          long joinDeadline = System.nanoTime() + INTERRUPT_JOIN_MS.toNanos();
           for (Thread t : leaked.keySet()) {
             long remaining = TimeUnit.NANOSECONDS.toMillis(joinDeadline - System.nanoTime());
-            if (remaining <= 0) break;
+            if (remaining <= 0) {
+              break;
+            }
+
             try {
               t.join(remaining);
             } catch (InterruptedException e) {
@@ -260,27 +280,7 @@ public class DetectThreadLeaksExtension
   private static Map<Thread, StackTraceElement[]> liveThreadsWithStacks(Predicate<Thread> filter) {
     return Thread.getAllStackTraces().entrySet().stream()
         .filter(e -> e.getKey().isAlive())
-        .filter(e -> !isKnownSystemThread(e.getKey()))
         .filter(e -> !filter.test(e.getKey()))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-  }
-
-  private static boolean isKnownSystemThread(Thread t) {
-    ThreadGroup tgroup = t.getThreadGroup();
-
-    if (tgroup != null && "system".equals(tgroup.getName()) && tgroup.getParent() == null) {
-      return true;
-    }
-
-    return switch (t.getName()) {
-      case "JFR request timer",
-          "YJPAgent-Telemetry",
-          "MemoryPoolMXBean notification dispatcher",
-          "AWT-AppKit",
-          "process reaper",
-          "JUnit5-serializer-daemon" ->
-          true;
-      default -> t.getName().contains("Poller SunPKCS11");
-    };
   }
 }
