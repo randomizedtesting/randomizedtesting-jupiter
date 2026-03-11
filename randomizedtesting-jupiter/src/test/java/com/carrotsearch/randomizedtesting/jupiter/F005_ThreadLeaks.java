@@ -5,11 +5,16 @@ import static org.junit.platform.testkit.engine.EventConditions.*;
 import static org.junit.platform.testkit.engine.TestExecutionResultConditions.*;
 
 import com.carrotsearch.randomizedtesting.jupiter.infra.IgnoreInStandaloneRuns;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,13 +23,28 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
 /** Verify that {@link DetectThreadLeaks} detects threads leaked from tests. */
+@Execution(ExecutionMode.SAME_THREAD)
 public class F005_ThreadLeaks {
+  private static final List<Thread> forkedThreads = new ArrayList<>();
+
+  @AfterEach
+  void interruptAndJoinForkedThreads() throws InterruptedException {
+    for (var t : forkedThreads) t.interrupt();
+    for (var t : forkedThreads) t.join();
+    forkedThreads.clear();
+  }
+
   @Nested
   class TestSuiteScope {
     @TestFactory
-    Stream<DynamicTest> leakedThreadIsDetectedAtSuiteEnd() {
+    Stream<DynamicTest> leakedThreadIsDetected() {
       return Stream.of(
-              LeakInBeforeAllMethod.class, LeakInTestMethod.class, LeakInAfterAllMethod.class)
+              LeakInBeforeAll.class,
+              LeakInBeforeEach.class,
+              LeakInConstructor.class,
+              LeakInTestMethod.class,
+              LeakInAfterEach.class,
+              LeakInAfterAll.class)
           .map(
               clazz ->
                   DynamicTest.dynamicTest(
@@ -41,6 +61,38 @@ public class F005_ThreadLeaks {
     }
 
     @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
+    static class LeakInBeforeAll extends IgnoreInStandaloneRuns {
+      @BeforeAll
+      static void beforeAll() {
+        startSleepingThread();
+      }
+
+      @Test
+      void testMethod() {}
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
+    static class LeakInBeforeEach extends IgnoreInStandaloneRuns {
+      @BeforeEach
+      void beforeEach() {
+        startSleepingThread();
+      }
+
+      @Test
+      void testMethod() {}
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
+    static class LeakInConstructor extends IgnoreInStandaloneRuns {
+      LeakInConstructor() {
+        startSleepingThread();
+      }
+
+      @Test
+      void testMethod() {}
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
     static class LeakInTestMethod extends IgnoreInStandaloneRuns {
       @Test
       void testMethod() {
@@ -49,7 +101,18 @@ public class F005_ThreadLeaks {
     }
 
     @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
-    static class LeakInAfterAllMethod extends IgnoreInStandaloneRuns {
+    static class LeakInAfterEach extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod() {}
+
+      @AfterEach
+      void afterEach() {
+        startSleepingThread();
+      }
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
+    static class LeakInAfterAll extends IgnoreInStandaloneRuns {
       @Test
       void testMethod() {}
 
@@ -58,14 +121,92 @@ public class F005_ThreadLeaks {
         startSleepingThread();
       }
     }
+  }
 
-    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
-    static class LeakInBeforeAllMethod extends IgnoreInStandaloneRuns {
+  @Nested
+  class TestTestScope {
+    @TestFactory
+    Stream<DynamicTest> leakedThreadIsDetected() {
+      return Stream.of(
+              LeakInBeforeAll.class,
+              LeakInBeforeEach.class,
+              LeakInConstructor.class,
+              LeakInTestMethod.class,
+              LeakInAfterEach.class,
+              LeakInAfterAll.class)
+          .map(
+              clazz ->
+                  DynamicTest.dynamicTest(
+                      clazz.getSimpleName(),
+                      () -> {
+                        collectExecutionResults(testKitBuilder(clazz))
+                            .results()
+                            .allEvents()
+                            .finished()
+                            .failed()
+                            .assertEventsMatchExactly(
+                                event(finishedWithFailure(instanceOf(AssertionError.class))));
+                      }));
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
+    static class LeakInBeforeAll extends IgnoreInStandaloneRuns {
+      @BeforeAll
+      static void beforeAll() {
+        startSleepingThread();
+      }
+
+      @Test
+      void testMethod() {}
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
+    static class LeakInBeforeEach extends IgnoreInStandaloneRuns {
+      @BeforeEach
+      void beforeEach() {
+        startSleepingThread();
+      }
+
+      @Test
+      void testMethod() {}
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
+    static class LeakInConstructor extends IgnoreInStandaloneRuns {
+      LeakInConstructor() {
+        startSleepingThread();
+      }
+
+      @Test
+      void testMethod() {}
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
+    static class LeakInTestMethod extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod() {
+        startSleepingThread();
+      }
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
+    static class LeakInAfterEach extends IgnoreInStandaloneRuns {
       @Test
       void testMethod() {}
 
-      @BeforeAll
-      static void beforeAll() {
+      @AfterEach
+      void afterEach() {
+        startSleepingThread();
+      }
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
+    static class LeakInAfterAll extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod() {}
+
+      @AfterAll
+      static void afterAll() {
         startSleepingThread();
       }
     }
@@ -91,27 +232,6 @@ public class F005_ThreadLeaks {
 
     @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
     static class SuiteScopeWithLeak extends IgnoreInStandaloneRuns {
-      @Test
-      void testMethod() {
-        startSleepingThread();
-      }
-    }
-  }
-
-  @Nested
-  class TestTestScope {
-    @Test
-    void leakedThreadIsDetectedAfterTest() {
-      collectExecutionResults(testKitBuilder(TestScopeWithLeak.class))
-          .results()
-          .allEvents()
-          .finished()
-          .failed()
-          .assertEventsMatchExactly(event(finishedWithFailure(instanceOf(AssertionError.class))));
-    }
-
-    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
-    static class TestScopeWithLeak extends IgnoreInStandaloneRuns {
       @Test
       void testMethod() {
         startSleepingThread();
@@ -164,16 +284,7 @@ public class F005_ThreadLeaks {
     static class ShortLivedLeak extends IgnoreInStandaloneRuns {
       @Test
       void testMethod() {
-        var t =
-            new Thread(
-                () -> {
-                  try {
-                    Thread.sleep(100);
-                  } catch (InterruptedException ignored) {
-                  }
-                });
-        t.setDaemon(true);
-        t.start();
+        startSleepingThread(Duration.ofMillis(100));
       }
     }
 
@@ -193,16 +304,7 @@ public class F005_ThreadLeaks {
       @Test
       @DetectThreadLeaks.LingerTime(millis = 10_000)
       void testMethod() {
-        var t =
-            new Thread(
-                () -> {
-                  try {
-                    Thread.sleep(100);
-                  } catch (InterruptedException ignored) {
-                  }
-                });
-        t.setDaemon(true);
-        t.start();
+        startSleepingThread(Duration.ofMillis(100));
       }
     }
 
@@ -213,16 +315,7 @@ public class F005_ThreadLeaks {
       @Test
       @DetectThreadLeaks.LingerTime(millis = 10_000)
       void testMethod() {
-        var t =
-            new Thread(
-                () -> {
-                  try {
-                    Thread.sleep(100);
-                  } catch (InterruptedException ignored) {
-                  }
-                });
-        t.setDaemon(true);
-        t.start();
+        startSleepingThread(Duration.ofMillis(100));
       }
     }
   }
@@ -285,7 +378,7 @@ public class F005_ThreadLeaks {
     static class ExcludedByClassFilter extends IgnoreInStandaloneRuns {
       @Test
       void testMethod() {
-        startNamedThread("excluded-a-1");
+        startSleepingThread("excluded-a-1");
       }
     }
 
@@ -299,16 +392,16 @@ public class F005_ThreadLeaks {
       }
     }
 
-    // Class filter excludes "excluded-a-*", method filter excludes "excluded-b-*";
-    // both threads are started → both excluded → pass.
-    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
     @DetectThreadLeaks.ExcludeThreads(ExcludeNamedAFilter.class)
-    static class HierarchicalFilters extends IgnoreInStandaloneRuns {
+    static class Superclass extends IgnoreInStandaloneRuns {}
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.TEST)
+    @DetectThreadLeaks.ExcludeThreads(ExcludeNamedBFilter.class)
+    static class HierarchicalFilters extends Superclass {
       @Test
-      @DetectThreadLeaks.ExcludeThreads(ExcludeNamedBFilter.class)
       void testMethod() {
-        startNamedThread("excluded-a-1");
-        startNamedThread("excluded-b-1");
+        startSleepingThread("excluded-a-1");
+        startSleepingThread("excluded-b-1");
       }
     }
   }
@@ -327,20 +420,6 @@ public class F005_ThreadLeaks {
     public boolean test(Thread t) {
       return t.getName().startsWith("excluded-b-");
     }
-  }
-
-  private static void startNamedThread(String name) {
-    var t =
-        new Thread(
-            () -> {
-              try {
-                Thread.sleep(TimeUnit.MINUTES.toMillis(1));
-              } catch (InterruptedException ignored) {
-              }
-            },
-            name);
-    t.setDaemon(true);
-    t.start();
   }
 
   @Nested
@@ -381,13 +460,12 @@ public class F005_ThreadLeaks {
     static class UncaughtInTestMethod extends IgnoreInStandaloneRuns {
       @Test
       void testMethod() throws InterruptedException {
-        var t =
-            new Thread(
+        startThread(
+                "bg-thread",
                 () -> {
                   throw new RuntimeException("uncaught-test-exception");
-                });
-        t.start();
-        t.join();
+                })
+            .join();
       }
     }
 
@@ -395,31 +473,71 @@ public class F005_ThreadLeaks {
     static class UncaughtWithLeak extends IgnoreInStandaloneRuns {
       @Test
       void testMethod() {
-        var t1 =
-            new Thread(
-                () -> {
-                  try {
-                    Thread.sleep(TimeUnit.MINUTES.toMillis(1));
-                  } catch (InterruptedException ignored) {
-                    throw new RuntimeException("uncaught-test-exception");
-                  }
-                });
-        t1.start();
-      }
-    }
-  }
-
-  /** Starts a daemon thread that sleeps long enough to be observable as a leak. */
-  private static void startSleepingThread() {
-    var t =
-        new Thread(
+        startThread(
+            "bg-thread",
             () -> {
               try {
                 Thread.sleep(TimeUnit.MINUTES.toMillis(1));
               } catch (InterruptedException ignored) {
+                throw new RuntimeException("uncaught-test-exception");
               }
             });
-    t.setDaemon(true);
+      }
+    }
+  }
+
+  @Nested
+  class TestNoneScope {
+    @Test
+    void leakedThreadDoesNotFailWithNoneScope() {
+      collectExecutionResults(testKitBuilder(NoneScope.class))
+          .results()
+          .allEvents()
+          .assertThatEvents()
+          .doNotHave(event(finishedWithFailure()));
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.NONE)
+    static class NoneScope extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod() {
+        startSleepingThread();
+      }
+    }
+  }
+
+  /** Starts a thread that sleeps long enough to be observable as a leak. */
+  private static void startSleepingThread() {
+    startSleepingThread(Duration.ofMinutes(1));
+  }
+
+  /** Starts a named thread that sleeps long enough to be observable as a leak. */
+  private static void startSleepingThread(String name) {
+    startThread(
+        name,
+        () -> {
+          try {
+            Thread.sleep(Duration.ofMinutes(1));
+          } catch (InterruptedException ignored) {
+          }
+        });
+  }
+
+  private static void startSleepingThread(Duration duration) {
+    startThread(
+        "sleeping-thread",
+        () -> {
+          try {
+            Thread.sleep(duration.toMillis());
+          } catch (InterruptedException ignored) {
+          }
+        });
+  }
+
+  private static Thread startThread(String name, Runnable r) {
+    var t = new Thread(r, name);
+    forkedThreads.add(t);
     t.start();
+    return t;
   }
 }

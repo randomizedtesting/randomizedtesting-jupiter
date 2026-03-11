@@ -72,7 +72,8 @@ public class TestClass {
 ## Migration notes (from randomizedtesting for junit4)
 
 * `@ThreadLeakScope` is replaced with `@DetectThreadLeaks(scope = ...)`. The `NONE` scope
-  (disabling all checks) has no equivalent; simply remove `@DetectThreadLeaks` from the class.
+  (disabling all checks) maps to `@DetectThreadLeaks(scope = DetectThreadLeaks.Scope.NONE)`,
+  or simply remove `@DetectThreadLeaks` from the class entirely.
   The default scope changed: the old default was `TEST`; the new default is `SUITE`.
 
 * `@ThreadLeakLingering(linger = N)` is replaced with `@DetectThreadLeaks.LingerTime(millis = N)`.

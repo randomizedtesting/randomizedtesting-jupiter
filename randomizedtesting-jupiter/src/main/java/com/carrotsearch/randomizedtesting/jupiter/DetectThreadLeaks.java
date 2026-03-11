@@ -26,6 +26,8 @@ public @interface DetectThreadLeaks {
   Scope scope() default Scope.SUITE;
 
   enum Scope {
+    /** Disable thread leak detection entirely. */
+    NONE,
     /** Check for leaked threads once after all tests in the class complete. */
     SUITE,
     /** Check for leaked threads after each individual test method. */
@@ -51,11 +53,10 @@ public @interface DetectThreadLeaks {
    * Excludes threads matched by any of the given {@link Predicate} classes from leak detection. A
    * thread is excluded when at least one predicate returns {@code true} for it.
    *
-   * <p>Annotations are collected hierarchically: the test method, then the class, then each
-   * superclass, and the filters from all levels are combined. Place on the same class or method as
-   * {@link DetectThreadLeaks}.
+   * <p>Annotations are collected hierarchically from the class and its superclasses, and the
+   * filters from all levels are combined.
    */
-  @Target({ElementType.TYPE, ElementType.METHOD})
+  @Target({ElementType.TYPE})
   @Retention(RetentionPolicy.RUNTIME)
   @Documented
   @interface ExcludeThreads {

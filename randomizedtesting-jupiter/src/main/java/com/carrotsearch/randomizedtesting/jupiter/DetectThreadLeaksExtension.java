@@ -23,7 +23,7 @@ public class DetectThreadLeaksExtension
   private static final Logger LOGGER = Logger.getLogger(DetectThreadLeaksExtension.class.getName());
   private static final ExtensionContext.Namespace EXTENSION_NAMESPACE =
       ExtensionContext.Namespace.create(DetectThreadLeaksExtension.class);
-  private static final String SNAPSHOT_KEY = "snapshot";
+  private static final String THREAD_SNAPSHOT_KEY = "snapshot";
   private static final String CONCURRENT_KEY = "concurrent";
   private static final String UNCAUGHT_EXCEPTION_HANDLER_KEY = "uncaught-exception-handler";
 
@@ -32,6 +32,10 @@ public class DetectThreadLeaksExtension
 
   @Override
   public void beforeAll(ExtensionContext context) {
+    if (scope(context) == DetectThreadLeaks.Scope.NONE) {
+      return;
+    }
+
     if (context.getExecutionMode() != ExecutionMode.SAME_THREAD) {
       LOGGER.warning(
           "Thread leak detection is disabled: tests in ["
@@ -40,23 +44,36 @@ public class DetectThreadLeaksExtension
       context.getStore(EXTENSION_NAMESPACE).put(CONCURRENT_KEY, Boolean.TRUE);
       return;
     }
-    if (scope(context) == DetectThreadLeaks.Scope.SUITE) {
-      var store = context.getStore(EXTENSION_NAMESPACE);
-      var filter = buildFilter(context);
-      store.put(UNCAUGHT_EXCEPTION_HANDLER_KEY, installUncaughtExceptionHandler());
-      store.put(SNAPSHOT_KEY, liveThreads(filter));
-    }
+
+    var store = context.getStore(EXTENSION_NAMESPACE);
+    var filter = buildFilter(context);
+    store.put(UNCAUGHT_EXCEPTION_HANDLER_KEY, installUncaughtExceptionHandler());
+    store.put(THREAD_SNAPSHOT_KEY, liveThreads(filter));
   }
 
   @Override
-  public void afterAll(ExtensionContext context) {
-    if (isConcurrentMode(context) || scope(context) != DetectThreadLeaks.Scope.SUITE) return;
+  public void beforeEach(ExtensionContext context) {
+    if (isConcurrentMode(context) || scope(context) != DetectThreadLeaks.Scope.TEST) {
+      return;
+    }
+
+    var store = context.getStore(EXTENSION_NAMESPACE);
+    var filter = buildFilter(context);
+    store.put(THREAD_SNAPSHOT_KEY, liveThreads(filter));
+  }
+
+  @Override
+  public void afterEach(ExtensionContext context) {
+    if (isConcurrentMode(context) || scope(context) != DetectThreadLeaks.Scope.TEST) {
+      return;
+    }
+
     var store = context.getStore(EXTENSION_NAMESPACE);
     var handler = store.get(UNCAUGHT_EXCEPTION_HANDLER_KEY, UncaughtExceptionsHandler.class);
     try {
       checkLeaks(
           store,
-          "suite [" + context.getDisplayName() + "]",
+          "test [" + context.getDisplayName() + "]",
           linger(context),
           buildFilter(context),
           handler);
@@ -66,23 +83,17 @@ public class DetectThreadLeaksExtension
   }
 
   @Override
-  public void beforeEach(ExtensionContext context) {
-    if (isConcurrentMode(context) || scope(context) != DetectThreadLeaks.Scope.TEST) return;
-    var store = context.getStore(EXTENSION_NAMESPACE);
-    var filter = buildFilter(context);
-    store.put(UNCAUGHT_EXCEPTION_HANDLER_KEY, installUncaughtExceptionHandler());
-    store.put(SNAPSHOT_KEY, liveThreads(filter));
-  }
+  public void afterAll(ExtensionContext context) {
+    if (isConcurrentMode(context) || scope(context) == DetectThreadLeaks.Scope.NONE) {
+      return;
+    }
 
-  @Override
-  public void afterEach(ExtensionContext context) {
-    if (isConcurrentMode(context) || scope(context) != DetectThreadLeaks.Scope.TEST) return;
     var store = context.getStore(EXTENSION_NAMESPACE);
     var handler = store.get(UNCAUGHT_EXCEPTION_HANDLER_KEY, UncaughtExceptionsHandler.class);
     try {
       checkLeaks(
           store,
-          "test [" + context.getDisplayName() + "]",
+          "suite [" + context.getDisplayName() + "]",
           linger(context),
           buildFilter(context),
           handler);
@@ -119,41 +130,26 @@ public class DetectThreadLeaksExtension
    * any filter matches it.
    */
   private static Predicate<Thread> buildFilter(ExtensionContext context) {
-    var filterClasses = new LinkedHashSet<Class<? extends Predicate<Thread>>>();
-
-    context
-        .getTestMethod()
-        .ifPresent(
-            m -> {
-              var ann = m.getAnnotation(DetectThreadLeaks.ExcludeThreads.class);
-              if (ann != null) {
-                for (var c : ann.value()) filterClasses.add(c);
-              }
-            });
+    var filterClasses = new LinkedHashSet<Predicate<Thread>>();
 
     for (Class<?> cls = context.getRequiredTestClass(); cls != null; cls = cls.getSuperclass()) {
       var ann = cls.getAnnotation(DetectThreadLeaks.ExcludeThreads.class);
       if (ann != null) {
-        for (var c : ann.value()) filterClasses.add(c);
+        for (var c : ann.value()) {
+          try {
+            filterClasses.add(c.getDeclaredConstructor().newInstance());
+          } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Cannot instantiate thread filter: " + cls.getName(), e);
+          }
+        }
       }
     }
 
-    if (filterClasses.isEmpty()) return t -> false;
+    if (filterClasses.isEmpty()) {
+      return t -> false;
+    }
 
-    var predicates =
-        filterClasses.stream()
-            .map(
-                cls -> {
-                  try {
-                    return (Predicate<Thread>) cls.getDeclaredConstructor().newInstance();
-                  } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(
-                        "Cannot instantiate thread filter: " + cls.getName(), e);
-                  }
-                })
-            .toList();
-
-    return t -> predicates.stream().anyMatch(p -> p.test(t));
+    return t -> filterClasses.stream().anyMatch(p -> p.test(t));
   }
 
   private static boolean isConcurrentMode(ExtensionContext context) {
@@ -172,7 +168,7 @@ public class DetectThreadLeaksExtension
       int lingerMs,
       Predicate<Thread> filter,
       UncaughtExceptionsHandler handler) {
-    var snapshot = store.get(SNAPSHOT_KEY, HashSet.class);
+    var snapshot = store.get(THREAD_SNAPSHOT_KEY, HashSet.class);
     AssertionError leakError = null;
 
     if (snapshot != null) {
@@ -196,7 +192,10 @@ public class DetectThreadLeaksExtension
       if (!leaked.isEmpty()) {
         // Suppress uncaught exception reporting during the interrupt/join phase to avoid
         // capturing expected InterruptedException-related exceptions from cleaned-up threads.
-        if (handler != null) handler.stopReporting();
+        if (handler != null) {
+          handler.stopReporting();
+        }
+
         try {
           leaked.keySet().forEach(Thread::interrupt);
           long joinDeadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(INTERRUPT_JOIN_MS);
@@ -211,7 +210,9 @@ public class DetectThreadLeaksExtension
             }
           }
         } finally {
-          if (handler != null) handler.resumeReporting();
+          if (handler != null) {
+            handler.resumeReporting();
+          }
         }
 
         var sb = new StringBuilder(leaked.size() + " thread(s) leaked from " + description + ":");
