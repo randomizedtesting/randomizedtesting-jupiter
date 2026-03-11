@@ -4,6 +4,9 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 /**
+ * The default filter containing sane defaults excluding system and ignorable threads when {@link
+ * DetectThreadLeaks} extension is used.
+ *
  * @see DetectThreadLeaks.ExcludeThreads
  */
 public class SystemThreadFilter implements Predicate<Thread> {

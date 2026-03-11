@@ -1,5 +1,6 @@
 package com.carrotsearch.randomizedtesting.jupiter;
 
+/** A single randomization seed (typically part of a larger {@link SeedChain}). */
 public record Seed(long value) {
   private static final char[] HEX = "0123456789ABCDEF".toCharArray();
   static final Seed UNSPECIFIED = new Seed(0);

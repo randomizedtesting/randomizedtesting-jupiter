@@ -1,10 +1,10 @@
 package com.carrotsearch.randomizedtesting.jupiter;
 
-public final class Threads {
+final class Threads {
   Threads() {}
 
   /** Collect thread information, JVM vendor insensitive. */
-  public static String threadName(Thread t) {
+  static String threadName(Thread t) {
     return "Thread["
         + ("id=" + t.threadId())
         + (", name=" + t.getName())

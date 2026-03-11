@@ -26,3 +26,5 @@
 - can we enforce the order of extensions (randomized testing > leaked threads)
 - how are jupiter timeouts working together with leaked threads ext.?
 - maybe bring back thread leak zombies annotation (if we can't cleanly terminate leaked threads, ignore all remaining tests).
+- maybe move some of the implementation details to a non-exposed package?
+- regenerate the javadocs with public API only.
