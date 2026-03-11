@@ -1,9 +1,8 @@
-package com.carrotsearch.randomizedtesting.jupiter.infra;
+package com.carrotsearch.randomizedtesting.tests.infra;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
 import java.util.Map;
-import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.platform.testkit.engine.EngineExecutionResults;
 import org.junit.platform.testkit.engine.EngineTestKit;
 
@@ -26,7 +25,7 @@ public final class TestInfra {
 
   public static EngineTestKit.Builder testKitBuilder() {
     OutputCaptureExtension.drain();
-    return EngineTestKit.engine(new JupiterTestEngine())
+    return EngineTestKit.engine("junit-jupiter")
         .configurationParameter(
             IgnoreInStandaloneRuns.EnabledIfConfigParaPresent.PARAM_NAME, "true");
   }

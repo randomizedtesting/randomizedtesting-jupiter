@@ -207,7 +207,7 @@ public class RandomizedContextSupplier
   // exception handling and seed stack frame injection
   //
 
-  static final String AUGMENTED_SEED_CLASS = "__randomizedtesting.SeedChain";
+  public static final String AUGMENTED_SEED_CLASS = "__randomizedtesting.SeedChain";
 
   @Override
   public void handleTestExecutionException(ExtensionContext context, Throwable throwable)

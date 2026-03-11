@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.jupiter.experiments;
+package com.carrotsearch.randomizedtesting.tests.experiments;
 
 import com.carrotsearch.randomizedtesting.jupiter.Randomized;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;

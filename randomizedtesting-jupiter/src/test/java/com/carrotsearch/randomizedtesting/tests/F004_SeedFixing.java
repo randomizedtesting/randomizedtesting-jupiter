@@ -1,9 +1,13 @@
-package com.carrotsearch.randomizedtesting.jupiter;
+package com.carrotsearch.randomizedtesting.tests;
 
-import static com.carrotsearch.randomizedtesting.jupiter.infra.TestInfra.*;
+import static com.carrotsearch.randomizedtesting.tests.infra.TestInfra.*;
 import static org.junit.platform.testkit.engine.EventConditions.*;
 
-import com.carrotsearch.randomizedtesting.jupiter.infra.IgnoreInStandaloneRuns;
+import com.carrotsearch.randomizedtesting.jupiter.FixSeed;
+import com.carrotsearch.randomizedtesting.jupiter.Randomized;
+import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
+import com.carrotsearch.randomizedtesting.jupiter.RandomizedContextSupplier;
+import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.RepeatedTest;

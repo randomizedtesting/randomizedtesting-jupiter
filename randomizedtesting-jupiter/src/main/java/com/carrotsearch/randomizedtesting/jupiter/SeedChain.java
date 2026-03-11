@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 public record SeedChain(List<Seed> seeds) {
   private static final SeedChain EMPTY = new SeedChain(List.of());
 
-  static SeedChain parse(String chain) {
+  public static SeedChain parse(String chain) {
     return new SeedChain(
         Stream.of(chain.replaceAll("[\\[\\]]", "").split("[:]"))
             .map(v -> v.trim().toLowerCase(Locale.ROOT))

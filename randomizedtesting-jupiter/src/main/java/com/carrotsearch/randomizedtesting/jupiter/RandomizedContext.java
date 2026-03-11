@@ -40,7 +40,7 @@ public final class RandomizedContext implements Closeable {
     return "Randomized context [" + ("seedChain=" + getSeedChain() + ",") + "]";
   }
 
-  SeedChain getSeedChain() {
+  public SeedChain getSeedChain() {
     ArrayList<Seed> seeds = new ArrayList<>();
     for (RandomizedContext c = this; c != null; c = c.getParent()) {
       seeds.add(c.seed);

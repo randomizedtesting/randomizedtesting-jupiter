@@ -1,4 +1,4 @@
-package com.carrotsearch.randomizedtesting.jupiter.infra;
+package com.carrotsearch.randomizedtesting.tests.infra;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
