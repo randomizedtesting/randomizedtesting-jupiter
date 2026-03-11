@@ -2,11 +2,15 @@ package com.carrotsearch.randomizedtesting.jupiter;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-record SeedChain(List<Seed> seeds) {
+/**
+ * A seed chain determines randomization if {@link Randomized} extension is used. A seed chain is a
+ * sequence of {@link Seed}s, typically associated with one or more hierarchical junit jupiter
+ * contexts.
+ */
+public record SeedChain(List<Seed> seeds) {
   private static final SeedChain EMPTY = new SeedChain(List.of());
 
   static SeedChain parse(String chain) {
@@ -37,7 +41,7 @@ record SeedChain(List<Seed> seeds) {
 
   record FirstAndRest(Seed first, SeedChain rest) {}
 
-  public FirstAndRest pop() {
+  FirstAndRest pop() {
     if (seeds.isEmpty()) {
       return new FirstAndRest(Seed.UNSPECIFIED, SeedChain.EMPTY);
     }
@@ -45,9 +49,5 @@ record SeedChain(List<Seed> seeds) {
     var first = seeds.iterator().next();
     var rest = new SeedChain(seeds.subList(1, seeds.size()));
     return new FirstAndRest(first, rest);
-  }
-
-  private long nextRandomValue() {
-    return new Random().nextLong();
   }
 }
