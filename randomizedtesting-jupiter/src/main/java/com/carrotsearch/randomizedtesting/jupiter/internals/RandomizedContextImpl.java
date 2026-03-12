@@ -75,6 +75,16 @@ public final class RandomizedContextImpl implements Closeable, RandomizedContext
     return random;
   }
 
+  @Override
+  public Random splitRandom() {
+    return splitRandom(getSeedChain().seeds().getLast());
+  }
+
+  @Override
+  public Random splitRandom(Seed seed) {
+    return randomFactory.apply(seed.value());
+  }
+
   RandomizedContextImpl deriveNew(ExtensionContext extensionContext) {
     // sanity check.
     {

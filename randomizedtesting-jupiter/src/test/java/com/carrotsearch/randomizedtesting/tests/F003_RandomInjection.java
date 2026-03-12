@@ -5,6 +5,8 @@ import static org.junit.platform.testkit.engine.EventConditions.*;
 
 import com.carrotsearch.randomizedtesting.jupiter.RandomInstanceFactory;
 import com.carrotsearch.randomizedtesting.jupiter.Randomized;
+import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
+import com.carrotsearch.randomizedtesting.jupiter.Seed;
 import com.carrotsearch.randomizedtesting.jupiter.SysProps;
 import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import java.io.PrintWriter;
@@ -146,7 +148,7 @@ public class F003_RandomInjection {
     @Randomized
     static class T1 extends IgnoreInStandaloneRuns {
       @Test
-      void testMethod(Random random) throws Exception {
+      void testRandomCannotBeShared(Random random) throws Exception {
         var ex = new AtomicReference<Exception>();
         var thread =
             new Thread(
@@ -164,6 +166,32 @@ public class F003_RandomInjection {
             .isNotNull()
             .isExactlyInstanceOf(RuntimeException.class)
             .hasMessageContaining("This Random instance is tied to thread");
+      }
+
+      @Test
+      void testSplitRandomWorks(RandomizedContext ctx) throws Exception {
+        var ex = new AtomicReference<Exception>();
+        var thread =
+            new Thread(
+                () -> {
+                  try {
+                    var r1 = ctx.splitRandom();
+                    // verify we can call it.
+                    r1.nextLong();
+
+                    var r2 = ctx.splitRandom(new Seed(0xdeadbeefL));
+                    var r3 = ctx.splitRandom(new Seed(0xdeadbeefL));
+
+                    // verify identical initial seed.
+                    Assertions.assertThat(r2.nextLong()).isEqualTo(r3.nextLong());
+                  } catch (Exception e) {
+                    ex.set(e);
+                  }
+                });
+        thread.start();
+        thread.join();
+
+        Assertions.assertThat(ex.get()).isNull();
       }
     }
 
