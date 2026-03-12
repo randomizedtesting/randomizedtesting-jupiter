@@ -6,6 +6,7 @@ import static org.junit.platform.testkit.engine.TestExecutionResultConditions.*;
 
 import com.carrotsearch.randomizedtesting.jupiter.Randomized;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
+import com.carrotsearch.randomizedtesting.jupiter.SysProps;
 import com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension;
 import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import java.util.stream.Stream;
@@ -27,8 +28,7 @@ public class F002_SeedRecovery {
     public void checkAtMethodLevel() {
       collectExecutionResults(
               testKitBuilder(AtTestLevel.class)
-                  .configurationParameter(
-                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "dead"))
+                  .configurationParameter(SysProps.TESTS_SEED.propertyKey, "dead"))
           .results()
           .testEvents()
           .finished()
@@ -62,8 +62,7 @@ public class F002_SeedRecovery {
     private void runCheck(Check e) {
       collectExecutionResults(
               testKitBuilder(e.clazz())
-                  .configurationParameter(
-                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "dead:beef:cafe"))
+                  .configurationParameter(SysProps.TESTS_SEED.propertyKey, "dead:beef:cafe"))
           .results()
           .allEvents()
           .finished()

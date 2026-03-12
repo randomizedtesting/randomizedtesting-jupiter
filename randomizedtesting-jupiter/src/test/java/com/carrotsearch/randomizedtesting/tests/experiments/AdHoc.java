@@ -9,7 +9,7 @@ public class AdHoc {
   @Disabled
   @Randomized
   public static class TestClass {
-    @RepeatedTest(10)
+    @RepeatedTest(3)
     public void testMethod(RandomizedContext ctx) {
       assert ctx.getRandom().nextBoolean();
     }

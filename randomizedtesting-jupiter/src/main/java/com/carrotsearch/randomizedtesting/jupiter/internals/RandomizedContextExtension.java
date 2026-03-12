@@ -1,18 +1,17 @@
 package com.carrotsearch.randomizedtesting.jupiter.internals;
 
+import com.carrotsearch.randomizedtesting.jupiter.RandomInstanceFactory;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
 import com.carrotsearch.randomizedtesting.jupiter.Seed;
 import com.carrotsearch.randomizedtesting.jupiter.SeedChain;
+import com.carrotsearch.randomizedtesting.jupiter.SysProps;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.function.LongFunction;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
@@ -31,63 +30,6 @@ public class RandomizedContextExtension
 
   private static final String CTX_KEY_RANDOMIZED_CONTEXT = "randomizedContext";
 
-  /** System properties controlling the extension. */
-  public enum SysProps {
-    /** Initial root seed value. If empty, a random value is picked for the root seed. */
-    TESTS_SEED("tests.seed"),
-
-    /**
-     * String name of the factory used to create {@link Random} instances (see {@link
-     * RandomFactoryType} for named implementations).
-     *
-     * @see RandomFactoryType
-     */
-    TESTS_RANDOM_FACTORY("tests.random.factory"),
-
-    /**
-     * A boolean property that enables stricter sanity assertions (including forbidding
-     * thread-shared access to the returned {@link Random} instances, which makes tests more
-     * predictable).
-     */
-    TESTS_RANDOM_ASSERTING("tests.random.asserting");
-
-    public final String propertyKey;
-
-    SysProps(String key) {
-      this.propertyKey = key;
-    }
-  }
-
-  public enum RandomFactoryType implements Supplier<RandomFactory> {
-    JDK,
-    XOROSHIRO_128_PLUS;
-
-    public static RandomFactoryType parse(String v) {
-      try {
-        return RandomFactoryType.valueOf(v.toUpperCase(Locale.ROOT));
-      } catch (IllegalArgumentException e) {
-        throw new IllegalArgumentException(
-            "Can't parse "
-                + SysProps.TESTS_RANDOM_FACTORY.propertyKey
-                + " property: "
-                + v
-                + " [valid values: "
-                + Stream.of(RandomFactoryType.values())
-                    .map(vv -> vv.name().toLowerCase(Locale.ROOT))
-                    .collect(Collectors.joining(", "))
-                + "]");
-      }
-    }
-
-    @Override
-    public RandomFactory get() {
-      return switch (this) {
-        case JDK -> Random::new;
-        case XOROSHIRO_128_PLUS -> Xoroshiro128PlusRandom::new;
-      };
-    }
-  }
-
   //
   // before-all (class-level context setup).
   //
@@ -95,7 +37,7 @@ public class RandomizedContextExtension
   @Override
   public void beforeAll(ExtensionContext extensionContext) {
     // Set up Random factory.
-    RandomFactory randomFactory = initializeRandomFactory(extensionContext);
+    var randomFactory = initializeRandomFactory(extensionContext);
 
     // Bootstrap the root store's context. Don't know if this can be done
     // in a more elegant way.
@@ -121,12 +63,12 @@ public class RandomizedContextExtension
             });
   }
 
-  private static RandomFactory initializeRandomFactory(ExtensionContext extensionContext) {
-    RandomFactory randomFactory =
+  private static LongFunction<Random> initializeRandomFactory(ExtensionContext extensionContext) {
+    var randomFactory =
         extensionContext
             .getConfigurationParameter(SysProps.TESTS_RANDOM_FACTORY.propertyKey)
-            .map(RandomFactoryType::parse)
-            .orElse(RandomFactoryType.XOROSHIRO_128_PLUS)
+            .map(RandomInstanceFactory::parse)
+            .orElse(RandomInstanceFactory.XOROSHIRO_128_PLUS)
             .get();
 
     if (extensionContext

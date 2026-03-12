@@ -12,8 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * This annotation should be placed on classes or methods that are {@link Randomized} and would like
  * to use a constant seed (for reproducing a problem or other reasons).
  *
- * <p>Note that seed fixing is always possible by setting {@link
- * RandomizedContextExtension.SysProps#TESTS_SEED} system property, this is just convenience.
+ * <p>Note that seed fixing is always possible by setting {@link SysProps#TESTS_SEED} system
+ * property, this is just convenience.
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Documented

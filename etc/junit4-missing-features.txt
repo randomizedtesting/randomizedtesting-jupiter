@@ -15,6 +15,8 @@
      randomBoolean(), randomFloat(), etc.
    - Encourages testing over a broad input domain rather than fixed values
 
+* utility rules (require assertions, etc.)
+
 [possibly doable with a custom test engine]
 
 - predictably shuffled test execution order

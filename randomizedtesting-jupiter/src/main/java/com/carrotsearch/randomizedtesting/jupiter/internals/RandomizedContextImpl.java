@@ -5,6 +5,7 @@ import com.carrotsearch.randomizedtesting.jupiter.Hashing;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
 import com.carrotsearch.randomizedtesting.jupiter.Seed;
 import com.carrotsearch.randomizedtesting.jupiter.SeedChain;
+import com.carrotsearch.randomizedtesting.jupiter.SysProps;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Random;
+import java.util.function.LongFunction;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 public final class RandomizedContextImpl implements Closeable, RandomizedContext {
@@ -22,12 +24,12 @@ public final class RandomizedContextImpl implements Closeable, RandomizedContext
   private final SeedChain remainingSeedChain;
 
   private final Random random;
-  private final RandomFactory randomFactory;
+  private final LongFunction<Random> randomFactory;
 
   RandomizedContextImpl(
       String contextId,
       RandomizedContextImpl parent,
-      RandomFactory randomFactory,
+      LongFunction<Random> randomFactory,
       Seed seed,
       SeedChain remainingSeedChain) {
     this.contextId = contextId;
@@ -61,7 +63,7 @@ public final class RandomizedContextImpl implements Closeable, RandomizedContext
 
   /**
    * @return Returns the root seed (randomization source).
-   * @see RandomizedContextExtension.SysProps#TESTS_SEED
+   * @see SysProps#TESTS_SEED
    */
   @Override
   public Seed getRootSeed() {

@@ -6,6 +6,7 @@ import static org.junit.platform.testkit.engine.EventConditions.*;
 import com.carrotsearch.randomizedtesting.jupiter.Randomized;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
 import com.carrotsearch.randomizedtesting.jupiter.SeedChain;
+import com.carrotsearch.randomizedtesting.jupiter.SysProps;
 import com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension;
 import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import java.io.PrintWriter;
@@ -35,8 +36,7 @@ public class F001_RandomizedContextInjection {
     public void testAllHooks() {
       collectExecutionResults(
               testKitBuilder(T1.class)
-                  .configurationParameter(
-                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "dead:beef:cafe"))
+                  .configurationParameter(SysProps.TESTS_SEED.propertyKey, "dead:beef:cafe"))
           .results()
           .allEvents()
           .assertThatEvents()
@@ -162,8 +162,7 @@ public class F001_RandomizedContextInjection {
       var executionResult1 =
           collectExecutionResults(
               testKitBuilder(TestIdenticalRandomWithTestFiltering.class)
-                  .configurationParameter(
-                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "deadbeed"));
+                  .configurationParameter(SysProps.TESTS_SEED.propertyKey, "deadbeed"));
 
       // select just one of the tests and pick it by its unique id. then re-run it.
       // the seed/ random should be identical because the re-run starts from the same root
@@ -173,8 +172,7 @@ public class F001_RandomizedContextInjection {
       var executionResult2 =
           collectExecutionResults(
               testKitBuilder()
-                  .configurationParameter(
-                      RandomizedContextExtension.SysProps.TESTS_SEED.propertyKey, "deadbeed")
+                  .configurationParameter(SysProps.TESTS_SEED.propertyKey, "deadbeed")
                   .selectors(DiscoverySelectors.selectUniqueId(pickedTest)));
 
       String o1 = executionResult1.capturedOutput().get(pickedTest);
