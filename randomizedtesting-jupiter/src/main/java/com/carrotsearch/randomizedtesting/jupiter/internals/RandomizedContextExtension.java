@@ -1,5 +1,6 @@
 package com.carrotsearch.randomizedtesting.jupiter.internals;
 
+import com.carrotsearch.randomizedtesting.jupiter.Constants;
 import com.carrotsearch.randomizedtesting.jupiter.RandomInstanceFactory;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
 import com.carrotsearch.randomizedtesting.jupiter.Seed;
@@ -152,8 +153,6 @@ public class RandomizedContextExtension
   // exception handling and seed stack frame injection
   //
 
-  public static final String AUGMENTED_SEED_CLASS = "__randomizedtesting.SeedChain";
-
   @Override
   public void handleTestExecutionException(ExtensionContext context, Throwable throwable)
       throws Throwable {
@@ -186,7 +185,8 @@ public class RandomizedContextExtension
 
   private Throwable addSeedChainStackFrame(Throwable throwable, SeedChain seedChain) {
     List<StackTraceElement> stack = new ArrayList<>(Arrays.asList(throwable.getStackTrace()));
-    stack.addFirst(new StackTraceElement(AUGMENTED_SEED_CLASS, "seed", seedChain.toString(), -1));
+    stack.addFirst(
+        new StackTraceElement(Constants.AUGMENTED_SEED_CLASS, "seed", seedChain.toString(), -1));
     throwable.setStackTrace(stack.toArray(StackTraceElement[]::new));
     return throwable;
   }

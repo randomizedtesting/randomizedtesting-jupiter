@@ -7,7 +7,6 @@ import com.carrotsearch.randomizedtesting.jupiter.Randomized;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
 import com.carrotsearch.randomizedtesting.jupiter.SeedChain;
 import com.carrotsearch.randomizedtesting.jupiter.SysProps;
-import com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension;
 import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import java.io.PrintWriter;
 import java.util.stream.Collectors;
@@ -26,7 +25,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 
 /**
- * Verifies that {@link RandomizedContextExtension} properly creates and injects a {@link
+ * Verifies that {@link Randomized} annotation properly creates and injects a {@link
  * RandomizedContext} into test callbacks and methods.
  */
 public class F001_RandomizedContextInjection {

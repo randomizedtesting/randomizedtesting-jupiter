@@ -4,10 +4,10 @@ import static com.carrotsearch.randomizedtesting.tests.infra.TestInfra.*;
 import static org.junit.platform.testkit.engine.EventConditions.*;
 import static org.junit.platform.testkit.engine.TestExecutionResultConditions.*;
 
+import com.carrotsearch.randomizedtesting.jupiter.Constants;
 import com.carrotsearch.randomizedtesting.jupiter.Randomized;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
 import com.carrotsearch.randomizedtesting.jupiter.SysProps;
-import com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension;
 import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
@@ -76,7 +76,7 @@ public class F002_SeedRecovery {
                           t -> {
                             Assertions.assertThat(t.getStackTrace()[0].toString())
                                 .contains(
-                                    RandomizedContextExtension.AUGMENTED_SEED_CLASS
+                                    Constants.AUGMENTED_SEED_CLASS
                                         + ".seed("
                                         + e.expectedSeed
                                         + ")");

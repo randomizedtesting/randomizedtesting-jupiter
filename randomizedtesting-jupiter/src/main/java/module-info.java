@@ -6,7 +6,9 @@ module com.carrotsearch.randomizedtesting {
   requires java.logging;
 
   exports com.carrotsearch.randomizedtesting.jupiter;
-  exports com.carrotsearch.randomizedtesting.jupiter.internals;
+  exports com.carrotsearch.randomizedtesting.jupiter.generators;
+
+  opens com.carrotsearch.randomizedtesting.jupiter.internals;
 
   provides org.junit.jupiter.api.extension.Extension with
       RandomizedContextExtension;

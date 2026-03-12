@@ -3,7 +3,7 @@
 11. Nightly / scaled tests
     - @Nightly marks a test that only runs when nightly mode is active
       (-Dtests.nightly=true)
-    - scaledRandomIntBetween() and multiplier() scale input sizes based on
+    - scaledrandomIntInRange() and multiplier() scale input sizes based on
       nightly vs. daily mode
 
 2. RandomizedTest base class and RandomizedContext
@@ -11,11 +11,13 @@
    - Access the context directly via RandomizedContext.current()
 
 3. Randomized input generation
-   - Utility methods on RandomizedTest: randomInt(), randomIntBetween(),
+   - Utility methods on RandomizedTest: randomInt(), randomIntInRange(),
      randomBoolean(), randomFloat(), etc.
    - Encourages testing over a broad input domain rather than fixed values
 
 * utility rules (require assertions, etc.)
+
+* reproduce-failure line info listener?
 
 [possibly doable with a custom test engine]
 

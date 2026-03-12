@@ -12,4 +12,5 @@ module com.carrotsearch.randomizedtesting.tests {
   opens com.carrotsearch.randomizedtesting.tests;
   opens com.carrotsearch.randomizedtesting.tests.infra;
   opens com.carrotsearch.randomizedtesting.tests.experiments;
+  opens com.carrotsearch.randomizedtesting.tests.generators;
 }

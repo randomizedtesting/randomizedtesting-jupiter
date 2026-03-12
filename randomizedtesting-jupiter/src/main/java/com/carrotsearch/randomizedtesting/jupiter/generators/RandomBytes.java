@@ -1,0 +1,27 @@
+package com.carrotsearch.randomizedtesting.jupiter.generators;
+
+import java.util.Random;
+
+/** Random byte sequence generators. */
+public final class RandomBytes {
+  /**
+   * @param r Random generator.
+   * @param length The length of the byte array. Can be zero.
+   * @return Returns a byte array with random content.
+   */
+  public static byte[] randomBytesOfLength(Random r, int length) {
+    return randomBytesOfLengthBetween(r, length, length);
+  }
+
+  /**
+   * @param r Random generator.
+   * @param minLength The minimum length of the byte array (inclusive). Can be zero.
+   * @param maxLength The maximum length of the byte array (inclusive). Can be zero.
+   * @return Returns a byte array with random content.
+   */
+  public static byte[] randomBytesOfLengthBetween(Random r, int minLength, int maxLength) {
+    byte[] bytes = new byte[RandomNumbers.randomIntInRange(r, minLength, maxLength)];
+    r.nextBytes(bytes);
+    return bytes;
+  }
+}
