@@ -14,6 +14,9 @@ See [CHANGES.txt](CHANGES.txt) for API changes and updates.
 
 ## Snapshot artifacts and releases
 
-We publish snapshots to sonatype central snapshots repository. [This
-document here](https://central.sonatype.org/publish/publish-portal-snapshots/#consuming-snapshot-releases-for-your-project)
-explains how to set up your project to download snapshot releases.
+We do not publish snapshot artifacts. If you'd like to work with a snapshot,
+use gradle's composite build or install maven artifacts locally with:
+
+```
+./gradlew publishToMavenLocal
+```
