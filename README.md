@@ -20,3 +20,9 @@ use gradle's composite build or install maven artifacts locally with:
 ```
 ./gradlew publishToMavenLocal
 ```
+
+## Release publishing
+
+```
+./gradlew publishToSonatype closeSonatypeStagingRepository
+```
