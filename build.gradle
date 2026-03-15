@@ -7,7 +7,7 @@ apply from: file('gradle/scripts/publishing-sonatype-central.gradle')
 
 allprojects {
   group = 'com.carrotsearch.randomizedtesting'
-  version = '0.1.0-SNAPSHOT'
+  version = '0.1.0'
 }
 
 nexusPublishing {
