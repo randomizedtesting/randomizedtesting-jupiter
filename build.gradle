@@ -1,13 +1,18 @@
 plugins {
   alias(libs.plugins.spotless) apply false
   alias(libs.plugins.nexus.publish)
+  alias(libs.plugins.opts)
 }
 
 apply from: file('gradle/scripts/publishing-sonatype-central.gradle')
 
+buildOptions {
+  addOption("project.version", "Project version")
+}
+
 allprojects {
   group = 'com.carrotsearch.randomizedtesting'
-  version = '0.2.0-SNAPSHOT'
+  version = buildOptions["project.version"].get()
 }
 
 nexusPublishing {
@@ -24,6 +29,7 @@ nexusPublishing {
 subprojects {
   apply plugin: 'java-library'
   apply plugin: 'com.diffplug.spotless'
+  apply plugin: libs.plugins.opts.get().getPluginId()
 
   repositories {
     mavenCentral()
