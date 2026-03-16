@@ -54,6 +54,7 @@ public class F002_SeedRecovery {
               new Check("@BeforeAll", AtBeforeAll.class, "[DEAD:BEEF]"),
               new Check("@BeforeEach", AtBeforeEachLevel.class, "[DEAD:BEEF:CAFE]"),
               new Check("@Test", AtTestLevel.class, "[DEAD:BEEF:CAFE]"),
+              new Check("@TestFactory", InDynamicTest.class, "[DEAD:BEEF:CAFE:"),
               new Check("@AfterEach", AtAfterEachLevel.class, "[DEAD:BEEF:CAFE]"),
               new Check("@AfterAll", AtAfterAll.class, "[DEAD:BEEF]"))
           .map(e -> DynamicTest.dynamicTest(e.name(), () -> runCheck(e)));
@@ -76,13 +77,23 @@ public class F002_SeedRecovery {
                           t -> {
                             Assertions.assertThat(t.getStackTrace()[0].toString())
                                 .contains(
-                                    Constants.AUGMENTED_SEED_CLASS
-                                        + ".seed("
-                                        + e.expectedSeed
-                                        + ")");
+                                    Constants.AUGMENTED_SEED_CLASS + ".seed(" + e.expectedSeed);
                             return true;
                           },
                           "first stack frame contains seed entry"))));
+    }
+
+    @Randomized
+    static class InDynamicTest extends IgnoreInStandaloneRuns {
+      @TestFactory
+      public Stream<DynamicTest> dynamicTests() {
+        return Stream.of(
+            DynamicTest.dynamicTest(
+                "dynamicTest",
+                () -> {
+                  throw new AssertionError("Failure.");
+                }));
+      }
     }
 
     @Randomized

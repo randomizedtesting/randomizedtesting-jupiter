@@ -6,6 +6,8 @@ import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
 import com.carrotsearch.randomizedtesting.jupiter.Seed;
 import com.carrotsearch.randomizedtesting.jupiter.SeedChain;
 import com.carrotsearch.randomizedtesting.jupiter.SysProps;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -13,19 +15,18 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.LongFunction;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.DynamicTestInvocationContext;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.LifecycleMethodExecutionExceptionHandler;
+import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
-import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 public class RandomizedContextExtension
-    implements ParameterResolver,
-        BeforeAllCallback,
-        TestExecutionExceptionHandler,
-        LifecycleMethodExecutionExceptionHandler {
+    implements ParameterResolver, BeforeAllCallback, InvocationInterceptor {
   private static final ExtensionContext.Namespace EXTENSION_NAMESPACE =
       ExtensionContext.Namespace.create(RandomizedContextExtension.class);
 
@@ -131,7 +132,7 @@ public class RandomizedContextExtension
   // internal handling of randomized contexts within junit contexts.
   //
 
-  private RandomizedContextImpl getRandomizedContextFor(ExtensionContext extensionContext) {
+  private static RandomizedContextImpl getRandomizedContextFor(ExtensionContext extensionContext) {
     var store =
         extensionContext.getStore(
             ExtensionContext.StoreScope.EXTENSION_CONTEXT, EXTENSION_NAMESPACE);
@@ -153,37 +154,97 @@ public class RandomizedContextExtension
   // exception handling and seed stack frame injection
   //
 
-  @Override
-  public void handleTestExecutionException(ExtensionContext context, Throwable throwable)
+  private static <T> T wrapInvoke(Invocation<T> invocation, ExtensionContext context)
       throws Throwable {
-    throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
+    try {
+      return invocation.proceed();
+    } catch (Throwable throwable) {
+      throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
+    }
   }
 
   @Override
-  public void handleBeforeAllMethodExecutionException(ExtensionContext context, Throwable throwable)
+  public <T> T interceptTestClassConstructor(
+      Invocation<T> invocation,
+      ReflectiveInvocationContext<Constructor<T>> invocationContext,
+      ExtensionContext extensionContext)
       throws Throwable {
-    throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
+    return wrapInvoke(invocation, extensionContext);
   }
 
   @Override
-  public void handleBeforeEachMethodExecutionException(
-      ExtensionContext context, Throwable throwable) throws Throwable {
-    throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
-  }
-
-  @Override
-  public void handleAfterEachMethodExecutionException(ExtensionContext context, Throwable throwable)
+  public void interceptBeforeAllMethod(
+      Invocation<@Nullable Void> invocation,
+      ReflectiveInvocationContext<Method> invocationContext,
+      ExtensionContext extensionContext)
       throws Throwable {
-    throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
+    wrapInvoke(invocation, extensionContext);
   }
 
   @Override
-  public void handleAfterAllMethodExecutionException(ExtensionContext context, Throwable throwable)
+  public void interceptBeforeEachMethod(
+      Invocation<@Nullable Void> invocation,
+      ReflectiveInvocationContext<Method> invocationContext,
+      ExtensionContext extensionContext)
       throws Throwable {
-    throw addSeedChainStackFrame(throwable, getRandomizedContextFor(context).getSeedChain());
+    wrapInvoke(invocation, extensionContext);
   }
 
-  private Throwable addSeedChainStackFrame(Throwable throwable, SeedChain seedChain) {
+  @Override
+  public void interceptTestMethod(
+      Invocation<@Nullable Void> invocation,
+      ReflectiveInvocationContext<Method> invocationContext,
+      ExtensionContext extensionContext)
+      throws Throwable {
+    wrapInvoke(invocation, extensionContext);
+  }
+
+  @Override
+  public <T> T interceptTestFactoryMethod(
+      Invocation<T> invocation,
+      ReflectiveInvocationContext<Method> invocationContext,
+      ExtensionContext extensionContext)
+      throws Throwable {
+    return wrapInvoke(invocation, extensionContext);
+  }
+
+  @Override
+  public void interceptTestTemplateMethod(
+      Invocation<@Nullable Void> invocation,
+      ReflectiveInvocationContext<Method> invocationContext,
+      ExtensionContext extensionContext)
+      throws Throwable {
+    wrapInvoke(invocation, extensionContext);
+  }
+
+  @Override
+  public void interceptAfterEachMethod(
+      Invocation<@Nullable Void> invocation,
+      ReflectiveInvocationContext<Method> invocationContext,
+      ExtensionContext extensionContext)
+      throws Throwable {
+    wrapInvoke(invocation, extensionContext);
+  }
+
+  @Override
+  public void interceptAfterAllMethod(
+      Invocation<@Nullable Void> invocation,
+      ReflectiveInvocationContext<Method> invocationContext,
+      ExtensionContext extensionContext)
+      throws Throwable {
+    wrapInvoke(invocation, extensionContext);
+  }
+
+  @Override
+  public void interceptDynamicTest(
+      Invocation<@Nullable Void> invocation,
+      DynamicTestInvocationContext invocationContext,
+      ExtensionContext extensionContext)
+      throws Throwable {
+    wrapInvoke(invocation, extensionContext);
+  }
+
+  private static Throwable addSeedChainStackFrame(Throwable throwable, SeedChain seedChain) {
     List<StackTraceElement> stack = new ArrayList<>(Arrays.asList(throwable.getStackTrace()));
     stack.addFirst(
         new StackTraceElement(Constants.AUGMENTED_SEED_CLASS, "seed", seedChain.toString(), -1));
