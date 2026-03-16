@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  */
 public class SystemThreadFilter implements Predicate<Thread> {
   private static final Pattern KNOWN_SUBSTRINGS =
-      Pattern.compile("(^ForkJoinPool\\.)|(Poller SunPKCS11)");
+      Pattern.compile("(^ForkJoinPool-)|(Poller SunPKCS11)");
 
   @Override
   public boolean test(Thread t) {
