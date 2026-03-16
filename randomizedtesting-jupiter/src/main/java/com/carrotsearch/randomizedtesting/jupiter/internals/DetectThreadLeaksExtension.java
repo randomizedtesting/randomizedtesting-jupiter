@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -26,8 +27,8 @@ public class DetectThreadLeaksExtension
   private static final ExtensionContext.Namespace EXTENSION_NAMESPACE =
       ExtensionContext.Namespace.create(DetectThreadLeaksExtension.class);
   private static final String THREAD_SNAPSHOT_KEY = "snapshot";
-  private static final String CONCURRENT_KEY = "concurrent";
   private static final String UNCAUGHT_EXCEPTION_HANDLER_KEY = "uncaught-exception-handler";
+  private static final String CONCURRENT_MODE_ON = "concurrent-mode";
 
   /** Total time budget to join interrupted threads before giving up. */
   private static final Duration INTERRUPT_JOIN_MS = Duration.ofSeconds(3);
@@ -38,12 +39,45 @@ public class DetectThreadLeaksExtension
       return;
     }
 
+    var rootContext = context.getRoot();
+    var parallelMode =
+        rootContext
+            .getStore(EXTENSION_NAMESPACE)
+            .computeIfAbsent(
+                CONCURRENT_MODE_ON,
+                (k) -> {
+                  var parallelEnabled =
+                      rootContext
+                          .getConfigurationParameter("junit.jupiter.execution.parallel.enabled")
+                          .map(Boolean::parseBoolean)
+                          .orElse(false);
+
+                  var parallelClasses =
+                      rootContext
+                          .getConfigurationParameter(
+                              "junit.jupiter.execution.parallel.mode.classes.default")
+                          .map(v -> ExecutionMode.valueOf(v.toUpperCase(Locale.ROOT)))
+                          .orElse(ExecutionMode.SAME_THREAD);
+
+                  boolean isParallelMode =
+                      parallelEnabled && parallelClasses != ExecutionMode.SAME_THREAD;
+                  if (isParallelMode) {
+                    LOGGER.warning("Thread leak detection is disabled in parallel mode.");
+                  }
+                  return isParallelMode;
+                },
+                Boolean.class);
+
+    if (parallelMode) {
+      return;
+    }
+
     if (context.getExecutionMode() != ExecutionMode.SAME_THREAD) {
       LOGGER.warning(
           "Thread leak detection is disabled: tests in ["
               + context.getDisplayName()
               + "] run in concurrent execution mode.");
-      context.getStore(EXTENSION_NAMESPACE).put(CONCURRENT_KEY, Boolean.TRUE);
+      context.getStore(EXTENSION_NAMESPACE).put(CONCURRENT_MODE_ON, Boolean.TRUE);
       return;
     }
 
@@ -173,7 +207,7 @@ public class DetectThreadLeaksExtension
         .map(
             p ->
                 Boolean.TRUE.equals(
-                    p.getStore(EXTENSION_NAMESPACE).get(CONCURRENT_KEY, Boolean.class)))
+                    p.getStore(EXTENSION_NAMESPACE).get(CONCURRENT_MODE_ON, Boolean.class)))
         .orElse(false);
   }
 
