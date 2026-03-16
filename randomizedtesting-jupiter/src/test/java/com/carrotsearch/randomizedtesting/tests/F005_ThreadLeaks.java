@@ -228,7 +228,7 @@ public class F005_ThreadLeaks {
                   finishedWithFailure(
                       instanceOf(AssertionError.class),
                       new Condition<>(
-                          t -> t.getMessage().contains(getClass().getPackageName()),
+                          t -> t.getMessage().contains(getClass().getSimpleName()),
                           "error message contains stack frames"))));
     }
 
