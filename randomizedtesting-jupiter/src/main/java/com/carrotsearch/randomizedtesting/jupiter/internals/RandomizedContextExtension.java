@@ -8,6 +8,8 @@ import com.carrotsearch.randomizedtesting.jupiter.SeedChain;
 import com.carrotsearch.randomizedtesting.jupiter.SysProps;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.LongFunction;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.DynamicTestInvocationContext;
@@ -103,13 +106,27 @@ public class RandomizedContextExtension
   //
   // ParameterResolver: inject RandomizedContext and Random instances into test methods.
   //
+  private static final Type supplierOfRandom = getSupplierOfRandomType();
+
+  /** Helper method that returns parameterized type for {@code Supplier<Random>}. */
+  private static Type getSupplierOfRandomType() {
+    abstract class TypeLiteral<T> {
+      public Type getType() {
+        return ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+      }
+    }
+
+    return (new TypeLiteral<Supplier<Random>>() {}).getType();
+  }
 
   @Override
   public boolean supportsParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    Class<?> parameterType = parameterContext.getParameter().getType();
-    return parameterType.equals(RandomizedContext.class) || parameterType.equals(Random.class);
+    var type = parameterContext.getParameter().getParameterizedType();
+    return type.equals(RandomizedContext.class)
+        || type.equals(Random.class)
+        || type.equals(supplierOfRandom);
   }
 
   @Override
@@ -117,14 +134,16 @@ public class RandomizedContextExtension
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
     var ctx = getRandomizedContextFor(extensionContext);
-    Class<?> parameterType = parameterContext.getParameter().getType();
-    if (parameterType.equals(RandomizedContext.class)) {
+    var type = parameterContext.getParameter().getParameterizedType();
+    if (type.equals(RandomizedContext.class)) {
       return ctx;
-    } else if (parameterType.equals(Random.class)) {
+    } else if (type.equals(Random.class)) {
       return ctx.getRandom();
+    } else if (type.equals(supplierOfRandom)) {
+      return (Supplier<Random>) ctx::splitRandom;
     } else {
       throw new RuntimeException(
-          "Unexpected unsupported parameter type in resolveParameter: " + parameterType);
+          "Unexpected unsupported parameter type in resolveParameter: " + type);
     }
   }
 

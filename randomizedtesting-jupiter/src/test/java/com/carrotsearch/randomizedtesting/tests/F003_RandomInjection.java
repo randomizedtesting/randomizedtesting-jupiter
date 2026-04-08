@@ -10,9 +10,11 @@ import com.carrotsearch.randomizedtesting.jupiter.Seed;
 import com.carrotsearch.randomizedtesting.jupiter.SysProps;
 import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import java.io.PrintWriter;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -69,6 +71,78 @@ public class F003_RandomInjection {
       @AfterAll
       static void afterAll(Random random) {
         Assertions.assertThat(random).isNotNull();
+      }
+    }
+  }
+
+  @Nested
+  class TestRandomSupplierInjection {
+    @Test
+    public void testAllHooks() {
+      collectExecutionResults(testKitBuilder(T1.class))
+          .results()
+          .allEvents()
+          .assertThatEvents()
+          .doNotHave(event(finishedWithFailure()));
+    }
+
+    @Randomized
+    static class T1 extends IgnoreInStandaloneRuns {
+      public T1(Supplier<Random> supplier) {
+        check(supplier);
+      }
+
+      @BeforeAll
+      static void beforeAll(Supplier<Random> supplier) {
+        check(supplier);
+      }
+
+      @BeforeEach
+      void beforeEach(Supplier<Random> supplier) {
+        check(supplier);
+      }
+
+      @Test
+      void testMethod(Supplier<Random> supplier) {
+        check(supplier);
+      }
+
+      @AfterEach
+      void afterEach(Supplier<Random> supplier) {
+        check(supplier);
+      }
+
+      @AfterAll
+      static void afterAll(Supplier<Random> supplier) {
+        check(supplier);
+      }
+
+      private static void check(Supplier<Random> supplier) {
+        Assertions.assertThat(supplier).isNotNull();
+        Assertions.assertThat(supplier.get()).isNotNull();
+
+        // ensure any threads that acquire a random from the supplier are started with
+        // the same initial seed.
+        var firstLongs =
+            IntStream.range(0, 5)
+                .mapToObj(
+                    i -> {
+                      try {
+                        AtomicReference<Object> rnd = new AtomicReference<>();
+                        var t =
+                            new Thread(
+                                () -> {
+                                  rnd.set(supplier.get().nextLong());
+                                });
+                        t.start();
+                        t.join();
+                        return rnd.get();
+                      } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                      }
+                    })
+                .toList();
+        Assertions.assertThat(new HashSet<>(firstLongs)).hasSize(1);
       }
     }
   }
