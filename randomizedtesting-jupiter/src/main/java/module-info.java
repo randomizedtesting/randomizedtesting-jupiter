@@ -4,6 +4,7 @@ module com.carrotsearch.randomizedtesting {
   requires org.junit.jupiter.api;
   requires org.junit.jupiter.params;
   requires java.logging;
+  requires java.compiler;
 
   exports com.carrotsearch.randomizedtesting.jupiter;
   exports com.carrotsearch.randomizedtesting.jupiter.generators;
