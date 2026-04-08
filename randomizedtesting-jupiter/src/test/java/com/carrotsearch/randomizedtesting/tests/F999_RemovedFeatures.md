@@ -68,3 +68,8 @@ Stream<DynamicTest> includeTestMethodsWithNoAnnotations() {
 * The `RandomizedRunner` combined multiple features in one class. This has been replaced by multiple
   extensions, which can be used independently. So `@Randomized` and `@DetectThreadLeaks` can be used
   completely independently of each other, for example.
+
+## Temporary files and directories
+
+* Use Jupiter's built-in @TempDir parameter annotation.
+

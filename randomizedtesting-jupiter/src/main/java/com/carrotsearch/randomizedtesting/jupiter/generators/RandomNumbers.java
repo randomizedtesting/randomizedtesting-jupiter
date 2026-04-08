@@ -9,6 +9,14 @@ import java.util.Random;
  * @see BiasedNumbers
  */
 public final class RandomNumbers {
+  /**
+   * @deprecated Will be removed. Use {@link #randomIntInRange(Random, int, int) }.
+   */
+  @Deprecated(forRemoval = true)
+  public static int randomIntBetween(Random r, int min, int max) {
+    return randomIntInRange(r, min, max);
+  }
+
   /** A random integer between <code>min</code> (inclusive) and <code>max</code> (inclusive). */
   public static int randomIntInRange(Random r, int min, int max) {
     assert max >= min : "max must be >= min: " + min + ", " + max;
@@ -18,6 +26,14 @@ public final class RandomNumbers {
     } else {
       return toIntExact(min + nextLong(r, 1 + range));
     }
+  }
+
+  /**
+   * @deprecated Will be removed. Use {@link #randomLongInRange(Random, long, long)}.
+   */
+  @Deprecated(forRemoval = true)
+  public static long randomLongBetween(Random r, long min, long max) {
+    return randomLongInRange(r, min, max);
   }
 
   /** A random long between <code>min</code> (inclusive) and <code>max</code> (inclusive). */

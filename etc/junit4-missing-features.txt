@@ -9,9 +9,9 @@
 2. RandomizedTest base class and RandomizedContext
    - Extend RandomizedTest for convenient access to a per-test Random instance
    - Access the context directly via RandomizedContext.current()
+   - Utility methods on RandomizedTest: randomInt(), randomIntInRange(),
 
 3. Randomized input generation
-   - Utility methods on RandomizedTest: randomInt(), randomIntInRange(),
      randomBoolean(), randomFloat(), etc.
    - Encourages testing over a broad input domain rather than fixed values
 

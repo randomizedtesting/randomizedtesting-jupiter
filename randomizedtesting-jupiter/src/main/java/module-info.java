@@ -9,6 +9,8 @@ module com.carrotsearch.randomizedtesting {
   exports com.carrotsearch.randomizedtesting.jupiter.generators;
 
   opens com.carrotsearch.randomizedtesting.jupiter.internals;
+  opens com.carrotsearch.randomizedtesting.jupiter to
+      org.junit.platform.commons;
 
   provides org.junit.jupiter.api.extension.Extension with
       RandomizedContextExtension;

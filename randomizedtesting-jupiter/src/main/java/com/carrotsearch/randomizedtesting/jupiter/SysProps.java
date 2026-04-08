@@ -19,7 +19,14 @@ public enum SysProps {
    * A boolean property that enables stricter sanity assertions (including forbidding thread-shared
    * access to the returned {@link Random} instances, which makes tests more predictable).
    */
-  TESTS_RANDOM_ASSERTING("tests.random.asserting");
+  TESTS_RANDOM_ASSERTING("tests.random.asserting"),
+
+  /**
+   * A "multiplier" for certain methods that return random values in {@link RandomizedTest}.
+   *
+   * @see RandomizedTest#multiplier()
+   */
+  TESTS_MULTIPLIER("tests.multiplier");
 
   public final String propertyKey;
 
