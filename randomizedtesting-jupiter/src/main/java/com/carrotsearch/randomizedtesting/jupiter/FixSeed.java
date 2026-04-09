@@ -1,7 +1,6 @@
 package com.carrotsearch.randomizedtesting.jupiter;
 
 import com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension;
-import com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextImpl;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -10,12 +9,16 @@ import java.lang.annotation.Target;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * This annotation should be placed on classes that want access to {@link RandomizedContextImpl}.
- * This extension injects {@link RandomizedContextImpl} parameter type automatically into test
- * methods and lifecycle hooks.
+ * This annotation should be placed on classes or methods that are {@link Randomized} and would like
+ * to use a constant seed (for reproducing a problem or other reasons).
+ *
+ * <p>Note that seed fixing is always possible by setting {@link SysProps#TESTS_SEED} system
+ * property, this is just convenience.
  */
-@Target({ElementType.TYPE})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(RandomizedContextExtension.class)
-public @interface Randomized {}
+public @interface FixSeed {
+  String value();
+}

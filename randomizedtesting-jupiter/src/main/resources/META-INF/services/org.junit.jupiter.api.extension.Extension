@@ -1,1 +1,1 @@
-com.carrotsearch.randomizedtesting.jupiter.RandomizedContextSupplier
+com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension

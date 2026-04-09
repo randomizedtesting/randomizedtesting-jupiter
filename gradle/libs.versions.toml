@@ -2,7 +2,8 @@
 assertj = "3.27.7"
 googleJavaFormat = "1.34.1"
 junit = "6.0.3"
-spotless = "8.2.1"
+nexus-publish = "2.0.0"
+spotless = "8.4.0"
 
 [libraries]
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
@@ -12,4 +13,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 junit-platform-testkit = { module = "org.junit.platform:junit-platform-testkit", version.ref = "junit" }
 
 [plugins]
+nexus-publish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+opts = { id = "com.carrotsearch.gradle.opts", version = "0.2.1" }
+buildinfra = "com.carrotsearch.gradle.buildinfra:0.0.21"

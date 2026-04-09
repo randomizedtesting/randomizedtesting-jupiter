@@ -17,8 +17,8 @@ import org.junit.platform.engine.support.descriptor.EngineDescriptor;
  *
  * <p>The number of iterations is controlled by the {@value #ITERATIONS_PROPERTY} configuration
  * parameter (default: {@code 1}). Each iteration's tests have unique context identifiers, causing
- * {@link RandomizedContextSupplier} to derive different seeds per iteration even when a fixed root
- * seed is set via {@link RandomizedContextSupplier.SysProps#TESTS_SEED}.
+ * {@link com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension} to derive
+ * different seeds per iteration even when a fixed root seed is set via {@link SysProps#TESTS_SEED}.
  */
 public class RandomizedTestEngine implements TestEngine {
   /** The unique engine ID ({@value}). */
@@ -45,8 +45,6 @@ public class RandomizedTestEngine implements TestEngine {
             .map(Integer::parseInt)
             .orElse(0);
 
-    System.out.println(uniqueId);
-
     var engineDescriptor = new EngineDescriptor(uniqueId, "Randomized Testing");
     for (int i = 1; i <= iterations; i++) {
       var iterationUniqueId = uniqueId.append("seed", String.valueOf(i));
@@ -60,11 +58,8 @@ public class RandomizedTestEngine implements TestEngine {
   }
 
   public static class TopSeedDescriptor extends AbstractTestDescriptor {
-    private final long seed;
-
-    public TopSeedDescriptor(UniqueId uniqueId, long seed) {
-      super(uniqueId, "Seed #" + new Seed(seed));
-      this.seed = seed;
+    public TopSeedDescriptor(UniqueId uniqueId, long iteration) {
+      super(uniqueId, "Iteration " + iteration);
     }
 
     @Override

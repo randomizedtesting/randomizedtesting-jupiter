@@ -1,0 +1,236 @@
+package com.carrotsearch.randomizedtesting.tests;
+
+import static com.carrotsearch.randomizedtesting.tests.infra.TestInfra.*;
+import static org.junit.platform.testkit.engine.EventConditions.*;
+
+import com.carrotsearch.randomizedtesting.jupiter.RandomInstanceFactory;
+import com.carrotsearch.randomizedtesting.jupiter.Randomized;
+import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
+import com.carrotsearch.randomizedtesting.jupiter.Seed;
+import com.carrotsearch.randomizedtesting.jupiter.SysProps;
+import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
+import java.io.PrintWriter;
+import java.util.Locale;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.TestInstance;
+
+/** Verifies that {@link java.util.Random} instances are properly injected as parameters. */
+public class F003_RandomInjection {
+  @Nested
+  class TestRandomInjection {
+    @Test
+    public void testAllHooks() {
+      collectExecutionResults(testKitBuilder(T1.class))
+          .results()
+          .allEvents()
+          .assertThatEvents()
+          .doNotHave(event(finishedWithFailure()));
+    }
+
+    @Randomized
+    static class T1 extends IgnoreInStandaloneRuns {
+      public T1(Random random) {
+        Assertions.assertThat(random).isNotNull();
+      }
+
+      @BeforeAll
+      static void beforeAll(Random random) {
+        Assertions.assertThat(random).isNotNull();
+      }
+
+      @BeforeEach
+      void beforeEach(Random random) {
+        Assertions.assertThat(random).isNotNull();
+      }
+
+      @Test
+      void testMethod(Random random) {
+        Assertions.assertThat(random).isNotNull();
+      }
+
+      @AfterEach
+      void afterEach(Random random) {
+        Assertions.assertThat(random).isNotNull();
+      }
+
+      @AfterAll
+      static void afterAll(Random random) {
+        Assertions.assertThat(random).isNotNull();
+      }
+    }
+  }
+
+  @Nested
+  class TestRandomFactoryAndState {
+    @Test
+    public void randomInitializedWithContextSeed() {
+      var executionResults =
+          IntStream.range(0, 5)
+              .mapToObj(
+                  unused ->
+                      collectExecutionResults(
+                          testKitBuilder(T1.class)
+                              .configurationParameter(SysProps.TESTS_SEED.propertyKey, "deadbeef")))
+              .toList();
+
+      Assertions.assertThat(
+              executionResults.stream()
+                  .flatMap(r -> r.capturedOutput().values().stream())
+                  .collect(Collectors.toSet()))
+          .hasSize(1);
+    }
+
+    @TestFactory
+    public Stream<DynamicTest> checkAllRandomFactories() {
+      return Stream.of(RandomInstanceFactory.values())
+          .map(
+              t -> {
+                return DynamicTest.dynamicTest(
+                    t.name(),
+                    () -> {
+                      var expectedClass = t.get().apply(0).getClass().getName();
+
+                      var executionResult =
+                          collectExecutionResults(
+                              testKitBuilder(T1.class)
+                                  .configurationParameter(
+                                      SysProps.TESTS_RANDOM_FACTORY.propertyKey,
+                                      t.name().toLowerCase(Locale.ROOT))
+                                  .configurationParameter(
+                                      SysProps.TESTS_RANDOM_ASSERTING.propertyKey, "false"));
+                      executionResult
+                          .results()
+                          .allEvents()
+                          .assertThatEvents()
+                          .doNotHave(event(finishedWithFailure()));
+
+                      Assertions.assertThat(executionResult.capturedOutput().values())
+                          .containsOnly(expectedClass);
+                    });
+              });
+    }
+
+    @Randomized
+    static class T1 extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod(PrintWriter pw, Random rnd) {
+        pw.print(rnd.getClass().getName());
+      }
+    }
+  }
+
+  @Nested
+  class TestRandomAssertions {
+    @Test
+    public void testAllHooks() {
+      collectExecutionResults(
+              testKitBuilder(T1.class)
+                  .configurationParameter(SysProps.TESTS_RANDOM_ASSERTING.propertyKey, "true"))
+          .results()
+          .allEvents()
+          .assertThatEvents()
+          .doNotHave(event(finishedWithFailure()));
+    }
+
+    @Randomized
+    static class T1 extends IgnoreInStandaloneRuns {
+      @Test
+      void testRandomCannotBeShared(Random random) throws Exception {
+        var ex = new AtomicReference<Exception>();
+        var thread =
+            new Thread(
+                () -> {
+                  try {
+                    random.nextLong();
+                  } catch (Exception e) {
+                    ex.set(e);
+                  }
+                });
+        thread.start();
+        thread.join();
+
+        Assertions.assertThat(ex.get())
+            .isNotNull()
+            .isExactlyInstanceOf(RuntimeException.class)
+            .hasMessageContaining("This Random instance is tied to thread");
+      }
+
+      @Test
+      void testSplitRandomWorks(RandomizedContext ctx) throws Exception {
+        var ex = new AtomicReference<Exception>();
+        var thread =
+            new Thread(
+                () -> {
+                  try {
+                    var r1 = ctx.splitRandom();
+                    // verify we can call it.
+                    r1.nextLong();
+
+                    var r2 = ctx.splitRandom(new Seed(0xdeadbeefL));
+                    var r3 = ctx.splitRandom(new Seed(0xdeadbeefL));
+
+                    // verify identical initial seed.
+                    Assertions.assertThat(r2.nextLong()).isEqualTo(r3.nextLong());
+                  } catch (Exception e) {
+                    ex.set(e);
+                  }
+                });
+        thread.start();
+        thread.join();
+
+        Assertions.assertThat(ex.get()).isNull();
+      }
+    }
+
+    @Test
+    public void testAssertingRandomIsClosedAfterContext() {
+      collectExecutionResults(
+              testKitBuilder(T2.class)
+                  .configurationParameter(SysProps.TESTS_RANDOM_ASSERTING.propertyKey, "true"))
+          .results()
+          .allEvents()
+          .assertThatEvents()
+          .doNotHave(event(finishedWithFailure()));
+    }
+
+    @Randomized
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    static class T2 extends IgnoreInStandaloneRuns {
+      Random rnd;
+
+      @Test
+      void testMethod1(Random random) throws Exception {
+        check(random);
+      }
+
+      @Test
+      void testMethod2(Random random) throws Exception {
+        check(random);
+      }
+
+      private void check(Random random) {
+        if (rnd == null) {
+          rnd = random;
+        } else {
+          Assertions.assertThat(rnd).isNotSameAs(random);
+          Assertions.assertThatCode(() -> rnd.nextLong())
+              .isExactlyInstanceOf(RuntimeException.class)
+              .hasMessageContaining("This Random instance has been invalidated");
+        }
+      }
+    }
+  }
+}

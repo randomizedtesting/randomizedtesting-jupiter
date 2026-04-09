@@ -11,3 +11,18 @@ for current features, their requirement descriptions and migration from junit4.
 See [LICENSE.txt](LICENSE.txt) to make your company's lawyer happy.
 
 See [CHANGES.txt](CHANGES.txt) for API changes and updates.
+
+## Snapshot artifacts and releases
+
+We do not publish snapshot artifacts. If you'd like to work with a snapshot,
+use gradle's composite build or install maven artifacts locally with:
+
+```
+./gradlew publishToMavenLocal
+```
+
+## Release publishing
+
+```
+./gradlew publishToSonatype closeSonatypeStagingRepository
+```

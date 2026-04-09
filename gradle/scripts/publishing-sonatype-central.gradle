@@ -1,0 +1,69 @@
+def published = [
+  ":randomizedtesting-jupiter"
+]
+
+configure(subprojects.findAll { it.path in published }) {
+  apply plugin: 'maven-publish'
+  apply plugin: 'signing'
+
+  // Hack: do not generate or publish gradle metadata files.
+  tasks.withType(GenerateModuleMetadata).configureEach {
+    enabled = false
+  }
+
+  plugins.withType(JavaPlugin).configureEach {
+    java {
+      withSourcesJar()
+      withJavadocJar()
+    }
+
+    publishing {
+      def configurePom = {
+        name = "${project.name}"
+        description = "${project.name}"
+        url = 'https://github.com/randomizedtesting/randomizedtesting-jupiter'
+        inceptionYear = "2026"
+
+        licenses {
+          license {
+            name = 'ASL 2.0 License'
+            url = 'https://github.com/randomizedtesting/randomizedtesting-jupiter/blob/main/LICENSE.txt'
+          }
+        }
+
+        organization {
+          name = "Carrot Search s.c."
+          url = "https://www.carrotsearch.com"
+        }
+
+        developers {
+          developer {
+            id = 'dawid.weiss'
+            name = 'Dawid Weiss'
+            email = 'dawid.weiss@carrotsearch.com'
+          }
+        }
+        scm {
+          connection = 'scm:git:git@github.com:randomizedtesting/randomizedtesting-jupiter.git'
+          developerConnection = 'scm:git:git@github.com:randomizedtesting/randomizedtesting-jupiter.git'
+          url = 'https://github.com/randomizedtesting/randomizedtesting-jupiter'
+        }
+      }
+
+      publications {
+        jars(MavenPublication) {
+          from components.java
+          groupId = project.group
+          artifactId = project.base.archivesName.get()
+
+          pom(configurePom)
+        }
+      }
+    }
+
+    signing {
+      required = { !project.version.endsWith('-SNAPSHOT') }
+      sign publishing.publications.jars
+    }
+  }
+}
