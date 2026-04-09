@@ -11,21 +11,17 @@ import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor;
 import org.junit.platform.engine.support.descriptor.EngineDescriptor;
 
 /**
- * A {@link TestEngine} that delegates to JUnit Jupiter and multiplies test execution by running
- * tests in multiple top-level iteration containers, each receiving independently derived random
- * seeds.
+ * An experimental {@link TestEngine} that delegates to JUnit Jupiter and multiplies test execution
+ * by re-running tests in multiple top-level jupiter engines.
  *
- * <p>The number of iterations is controlled by the {@value #ITERATIONS_PROPERTY} configuration
- * parameter (default: {@code 1}). Each iteration's tests have unique context identifiers, causing
- * {@link com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension} to derive
- * different seeds per iteration even when a fixed root seed is set via {@link SysProps#TESTS_SEED}.
+ * <p><strong>This is an experimental class and an experimental implementation.</strong>
+ *
+ * <p>The number of iterations is controlled by the {@link SysProps#TESTS_ITERS} configuration
+ * parameter. The default value (0) means no test are executed.
  */
-public class RandomizedTestEngine implements TestEngine {
+public final class RepeatExecutionTestEngine implements TestEngine {
   /** The unique engine ID ({@value}). */
   public static final String ENGINE_ID = "randomizedtesting-jupiter";
-
-  /** Configuration parameter controlling the number of test iterations. Default: {@code 1}. */
-  public static final String ITERATIONS_PROPERTY = "tests.iters";
 
   private static final String JUPITER_ENGINE_ID = "junit-jupiter";
 
@@ -41,24 +37,36 @@ public class RandomizedTestEngine implements TestEngine {
     int iterations =
         request
             .getConfigurationParameters()
-            .get(ITERATIONS_PROPERTY)
+            .get(SysProps.TESTS_ITERS.propertyKey)
             .map(Integer::parseInt)
             .orElse(0);
 
-    var engineDescriptor = new EngineDescriptor(uniqueId, "Randomized Testing");
+    UniqueId.Segment jupiterRootSegment;
+    {
+      var jupiterRootSegments = UniqueId.forEngine(JUPITER_ENGINE_ID).getSegments();
+      assert jupiterRootSegments.size() == 1;
+      jupiterRootSegment = jupiterRootSegments.getFirst();
+    }
+
+    var engineDescriptor = new EngineDescriptor(uniqueId, "RandomizedTesting");
     for (int i = 1; i <= iterations; i++) {
-      var iterationUniqueId = uniqueId.append("seed", String.valueOf(i));
-      var jupiterRootId = iterationUniqueId.append("engine", JUPITER_ENGINE_ID);
-      var jupiterDescriptor = jupiterEngine.discover(request, jupiterRootId);
-      var iterationDescriptor = new TopSeedDescriptor(iterationUniqueId, i);
+      var iterationUniqueId =
+          uniqueId.append(ReiterationDescriptor.SEGMENT_TYPE, String.valueOf(i));
+      var jupiterDescriptor =
+          jupiterEngine.discover(request, iterationUniqueId.append(jupiterRootSegment));
+
+      var iterationDescriptor = new ReiterationDescriptor(iterationUniqueId, i);
       iterationDescriptor.addChild(jupiterDescriptor);
       engineDescriptor.addChild(iterationDescriptor);
     }
+
     return engineDescriptor;
   }
 
-  public static class TopSeedDescriptor extends AbstractTestDescriptor {
-    public TopSeedDescriptor(UniqueId uniqueId, long iteration) {
+  public static class ReiterationDescriptor extends AbstractTestDescriptor {
+    public static final String SEGMENT_TYPE = "reiteration";
+
+    public ReiterationDescriptor(UniqueId uniqueId, long iteration) {
       super(uniqueId, "Iteration " + iteration);
     }
 
@@ -74,12 +82,13 @@ public class RandomizedTestEngine implements TestEngine {
     var listener = request.getEngineExecutionListener();
     listener.executionStarted(engineDescriptor);
     for (var child : engineDescriptor.getChildren()) {
-      executeIteration((TopSeedDescriptor) child, request);
+      executeIteration((ReiterationDescriptor) child, request);
     }
     listener.executionFinished(engineDescriptor, TestExecutionResult.successful());
   }
 
-  private void executeIteration(TopSeedDescriptor iterationDescriptor, ExecutionRequest request) {
+  private void executeIteration(
+      ReiterationDescriptor iterationDescriptor, ExecutionRequest request) {
     var listener = request.getEngineExecutionListener();
     listener.executionStarted(iterationDescriptor);
     for (var jupiterDescriptor : iterationDescriptor.getChildren()) {

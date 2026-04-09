@@ -29,4 +29,11 @@ public final class TestInfra {
         .configurationParameter(
             IgnoreInStandaloneRuns.EnabledIfConfigParaPresent.PARAM_NAME, "true");
   }
+
+  public static EngineTestKit.Builder testKitBuilder(String engineId) {
+    OutputCaptureExtension.drain();
+    return EngineTestKit.engine(engineId)
+        .configurationParameter(
+            IgnoreInStandaloneRuns.EnabledIfConfigParaPresent.PARAM_NAME, "true");
+  }
 }

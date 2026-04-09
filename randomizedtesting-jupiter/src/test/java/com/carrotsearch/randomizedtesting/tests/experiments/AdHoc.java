@@ -3,10 +3,11 @@ package com.carrotsearch.randomizedtesting.tests.experiments;
 import com.carrotsearch.randomizedtesting.jupiter.Randomized;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 
 public class AdHoc {
-  // @Disabled
+  @Disabled
   @Randomized
   public static class TestClass {
     @BeforeAll

@@ -3,7 +3,7 @@ package com.carrotsearch.randomizedtesting.jupiter.internals;
 import com.carrotsearch.randomizedtesting.jupiter.FixSeed;
 import com.carrotsearch.randomizedtesting.jupiter.Hashing;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
-import com.carrotsearch.randomizedtesting.jupiter.RandomizedTestEngine;
+import com.carrotsearch.randomizedtesting.jupiter.RepeatExecutionTestEngine;
 import com.carrotsearch.randomizedtesting.jupiter.Seed;
 import com.carrotsearch.randomizedtesting.jupiter.SeedChain;
 import com.carrotsearch.randomizedtesting.jupiter.SysProps;
@@ -123,7 +123,8 @@ public final class RandomizedContextImpl implements Closeable, RandomizedContext
     if (nextSeed.isUnspecified()) {
       var uniqueId = UniqueId.parse(extensionContext.getUniqueId());
       var strippedId = uniqueId.toString();
-      if (Objects.equals(RandomizedTestEngine.ENGINE_ID, uniqueId.getEngineId().orElse(null))) {
+      if (Objects.equals(
+          RepeatExecutionTestEngine.ENGINE_ID, uniqueId.getEngineId().orElse(null))) {
         var segments = uniqueId.getSegments();
         segments = segments.subList(2, segments.size());
         var stripped = UniqueId.root(segments.getFirst().getType(), segments.getFirst().getValue());
