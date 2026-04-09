@@ -22,6 +22,14 @@ public enum SysProps {
   TESTS_RANDOM_ASSERTING("tests.random.asserting"),
 
   /**
+   * Test reiteration count for the experimental test engine that re-runs full suites multiple times
+   * (with a constant or varying seed).
+   *
+   * @see RepeatExecutionTestEngine
+   */
+  TESTS_ITERS("tests.iters"),
+
+  /**
    * A "multiplier" for certain methods that return random values in {@link RandomizedTest}.
    *
    * @see RandomizedTest#multiplier()

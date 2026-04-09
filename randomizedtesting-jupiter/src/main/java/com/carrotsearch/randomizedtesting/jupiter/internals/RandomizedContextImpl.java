@@ -3,6 +3,7 @@ package com.carrotsearch.randomizedtesting.jupiter.internals;
 import com.carrotsearch.randomizedtesting.jupiter.FixSeed;
 import com.carrotsearch.randomizedtesting.jupiter.Hashing;
 import com.carrotsearch.randomizedtesting.jupiter.RandomizedContext;
+import com.carrotsearch.randomizedtesting.jupiter.RepeatExecutionTestEngine;
 import com.carrotsearch.randomizedtesting.jupiter.Seed;
 import com.carrotsearch.randomizedtesting.jupiter.SeedChain;
 import com.carrotsearch.randomizedtesting.jupiter.SysProps;
@@ -15,6 +16,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.function.LongFunction;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.engine.UniqueId;
 
 public final class RandomizedContextImpl implements Closeable, RandomizedContext {
   private final RandomizedContextImpl parent;
@@ -106,7 +108,7 @@ public final class RandomizedContextImpl implements Closeable, RandomizedContext
           throw new RuntimeException(
               String.format(
                   Locale.ROOT,
-                  "@%s annotatoin must declare concrete seeds or seed chains on: %s",
+                  "@%s annotation must declare concrete seeds or seed chains on: %s",
                   FixSeed.class.getName(),
                   extensionContext.getElement().get()));
         }
@@ -119,7 +121,19 @@ public final class RandomizedContextImpl implements Closeable, RandomizedContext
     var nextSeed = firstAndRest.first();
     var remainingChain = firstAndRest.rest();
     if (nextSeed.isUnspecified()) {
-      nextSeed = new Seed(this.seed.value() ^ Hashing.hash(extensionContext.getUniqueId()));
+      var uniqueId = UniqueId.parse(extensionContext.getUniqueId());
+      var strippedId = uniqueId.toString();
+      if (Objects.equals(
+          RepeatExecutionTestEngine.ENGINE_ID, uniqueId.getEngineId().orElse(null))) {
+        var segments = uniqueId.getSegments();
+        segments = segments.subList(2, segments.size());
+        var stripped = UniqueId.root(segments.getFirst().getType(), segments.getFirst().getValue());
+        for (int i = 1; i < segments.size(); i++) {
+          stripped = stripped.append(segments.get(i));
+        }
+        strippedId = stripped.toString();
+      }
+      nextSeed = new Seed(this.seed.value() ^ Hashing.hash(strippedId));
     }
 
     return new RandomizedContextImpl(

@@ -1,4 +1,4 @@
-import com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension;
+import com.carrotsearch.randomizedtesting.jupiter.RepeatExecutionTestEngine;
 
 module com.carrotsearch.randomizedtesting {
   requires org.junit.jupiter.api;
@@ -14,5 +14,13 @@ module com.carrotsearch.randomizedtesting {
       org.junit.platform.commons;
 
   provides org.junit.jupiter.api.extension.Extension with
-      RandomizedContextExtension;
+      com.carrotsearch.randomizedtesting.jupiter.internals.RandomizedContextExtension;
+
+  // These entries install support for tests.iters (RepeatedExecutionTestEngine).
+  requires org.junit.platform.engine;
+
+  uses org.junit.platform.engine.TestEngine;
+
+  provides org.junit.platform.engine.TestEngine with
+      RepeatExecutionTestEngine;
 }
