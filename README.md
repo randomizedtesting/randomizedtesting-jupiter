@@ -24,3 +24,8 @@ use gradle's composite build or install maven artifacts locally with:
 ```
 ./gradlew publishToSonatype closeSonatypeStagingRepository
 ```
+
+## Migration guide
+
+See the [migration guide](MIGRATION.md) for more details on how to migrate from JUnit4-based `randomizedtesting` to 
+this new JUnit5-based project.
