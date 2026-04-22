@@ -102,5 +102,4 @@ public class TestClass {
   user-controlled (`tests.killattempts`, `tests.killwait` properties in `RandomizedRunner`).
 
 * The default value of `@DetectThreadLeaks.ExcludeThreads` points at `SystemThreadFilter`. There is
-  no `defaultFilters` parameter; just use the `SystemThreadFilter` in any custom declarations filter
-  declarations.
+  no `defaultFilters` parameter; just add an explicit `SystemThreadFilter` to any declarations of `ExcludeThreads`.
