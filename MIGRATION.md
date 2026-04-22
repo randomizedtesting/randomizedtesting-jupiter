@@ -5,11 +5,9 @@ This guide covers all the changes required to migrate a project that uses
 from the JUnit 4 integration (`randomizedtesting-runner`) to the JUnit Jupiter
 integration (`randomizedtesting-jupiter`).
 
----
+## Maven dependencies
 
-## 1. Maven dependencies
-
-### 1.1 Add the JUnit BOM
+### Add the JUnit BOM
 
 Add a `dependencyManagement` section to import the JUnit BOM. This centralises
 version management for all JUnit artifacts so you only need to declare versions
@@ -29,7 +27,7 @@ in one place.
 </dependencyManagement>
 ```
 
-### 1.2 Replace the JUnit dependency
+### Replace the JUnit dependency
 
 | Before                           | After                                                |
 | -------------------------------- | ---------------------------------------------------- |
@@ -56,7 +54,7 @@ in one place.
 </dependency>
 ```
 
-### 1.3 Replace the RandomizedTesting dependency
+### Replace the RandomizedTesting dependency
 
 | Before                                                        | After                                                          |
 | ------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -84,7 +82,7 @@ in one place.
 </dependency>
 ```
 
-### 1.4 Simplify the build plugin configuration
+### Simplify the build plugin configuration
 
 JUnit 4 required disabling the default Surefire execution and replacing it with
 the dedicated `junit4-maven-plugin`. With JUnit Jupiter, standard Maven Surefire
@@ -129,11 +127,9 @@ natively discovers and runs tests — no custom plugin wiring is needed.
 </plugin>
 ```
 
----
+## Test runner and class-level annotations
 
-## 2. Test runner and class-level annotations
-
-### 2.1 Replace `@RunWith` with `@Randomized`
+### Replace `@RunWith` with `@Randomized`
 
 `@RunWith(RandomizedRunner.class)` is the JUnit 4 mechanism for plugging in a
 custom runner. In JUnit Jupiter it is replaced by the `@Randomized` extension
@@ -153,7 +149,7 @@ public class MyTest { ... }
 class MyTest { ... }
 ```
 
-### 2.2 Replace `@ThreadLeakFilters` with `@DetectThreadLeaks`
+### Replace `@ThreadLeakFilters` with `@DetectThreadLeaks`
 
 Thread-leak detection is now configured with two separate annotations:
 `@DetectThreadLeaks` to enable detection (now disabled by default), and `@DetectThreadLeaks.ExcludeThreads`
@@ -175,7 +171,7 @@ public class MyTest { ... }
 class MyTest { ... }
 ```
 
-### 2.3 Update the thread-leak filter interface
+### Update the thread-leak filter interface
 
 The `ThreadFilter` interface is replaced by the standard Java `Predicate<Thread>`.
 Note that **the contract is inverted**: `ThreadFilter.reject(t)` returned `true`
@@ -208,80 +204,9 @@ public static class MyFilter implements Predicate<Thread> {
 }
 ```
 
----
+## Randomness
 
-## 3. Lifecycle annotations
-
-All JUnit 4 lifecycle annotations have direct replacements in JUnit Jupiter.
-Methods no longer need to be `public`.
-
-| JUnit 4        | JUnit Jupiter |
-| -------------- | ------------- |
-| `@BeforeClass` | `@BeforeAll`  |
-| `@AfterClass`  | `@AfterAll`   |
-| `@Before`      | `@BeforeEach` |
-| `@After`       | `@AfterEach`  |
-
-**Before:**
-
-```java
-@BeforeClass
-public static void setUp() { ... }
-
-@AfterClass
-public static void tearDown() { ... }
-```
-
-**After:**
-
-```java
-@BeforeAll
-static void setUp() { ... }
-
-@AfterAll
-static void tearDown() { ... }
-```
-
----
-
-## 4. Accessing the test name
-
-### 4.1 Replace `@Rule TestName` with `TestInfo`
-
-JUnit 4 exposed the current test name through a `@Rule` field. In JUnit Jupiter,
-`TestInfo` is injected as a parameter into any lifecycle method or test method.
-The most common pattern is a single `@BeforeEach` method that receives `TestInfo`,
-which avoids repeating the same lookup in every test.
-
-**Before:**
-
-```java
-@Rule
-public TestName name = new TestName();
-
-@Test
-public void myTest() {
-    System.out.println("Running: " + name.getMethodName());
-}
-```
-
-**After:**
-
-```java
-@BeforeEach
-void beforeEach(TestInfo testInfo) {
-    System.out.println("Running: " + testInfo.getDisplayName());
-}
-
-@Test
-void myTest() { ... }
-```
-
----
-
-## 5. Randomness
-
-### 5.1 Inject `Random` explicitly
+### Inject `Random` explicitly
 
 The JUnit 4 integration exposed randomness through static no-arg helper methods
 (typically by extending `RandomizedTest` or using static imports). The Jupiter
@@ -316,7 +241,7 @@ void myTest(Random rnd) {
 }
 ```
 
-### 5.2 Replace `@Seed` with `@FixSeed`
+### Replace `@Seed` with `@FixSeed`
 
 | Before           | After               |
 | ---------------- | ------------------- |
@@ -338,13 +263,17 @@ public void myTest() { ... }
 void myTest(Random rnd) { ... }
 ```
 
----
-
-## 6. Repeated tests
+## Repeated tests
 
 JUnit 4 used the RandomizedTesting-specific `@Repeat` annotation combined with
 `@Test`. JUnit Jupiter provides a built-in `@RepeatedTest` annotation that
-replaces both.
+could replace both on a method level.
+
+But note that when using `@RepeatedTest`, you can not add a fixed seed with `@FixSeed` on the method
+as the same seed will be used for all the repeated tests which defeats the purpose.
+
+Instead, you should use the `-Dtests.iters=5` system property to control the number of iterations and let each
+iteration use a different random seed or set the root seed with `-Dtests.seed=12345`.
 
 **Before:**
 
@@ -361,9 +290,9 @@ public void myTest() { ... }
 void myTest(Random rnd) { ... }
 ```
 
----
+## JUnit 4 to Junit Jupiter related changes
 
-## 7. Class and method visibility
+### Class and method visibility
 
 JUnit 4 required test classes and methods to be `public`. JUnit Jupiter does not —
 package-private is the recommended convention.
@@ -386,7 +315,65 @@ class MyTest {
 }
 ```
 
----
+### Lifecycle annotations
+
+All JUnit 4 lifecycle annotations have direct replacements in JUnit Jupiter.
+Methods no longer need to be `public`.
+
+| JUnit 4        | JUnit Jupiter |
+| -------------- | ------------- |
+| `@BeforeClass` | `@BeforeAll`  |
+| `@AfterClass`  | `@AfterAll`   |
+| `@Before`      | `@BeforeEach` |
+| `@After`       | `@AfterEach`  |
+
+**Before:**
+
+```java
+@BeforeClass
+public static void setUp() { ... }
+
+@AfterClass
+public static void tearDown() { ... }
+```
+
+**After:**
+
+```java
+@BeforeAll
+static void setUp() { ... }
+
+@AfterAll
+static void tearDown() { ... }
+```
+
+### Replace `@Rule TestName` with `TestInfo`
+
+JUnit 4 exposed the current test name through a `@Rule` field. In JUnit Jupiter,
+`TestInfo` is injected as a parameter into any lifecycle method or test method.
+The most common pattern is a single `@BeforeEach` method that receives `TestInfo`,
+which avoids repeating the same lookup in every test.
+
+**Before:**
+
+```java
+@Rule
+public TestName name = new TestName();
+
+@Test
+public void myTest() {
+    System.out.println("Running: " + name.getMethodName());
+}
+```
+
+**After:**
+
+```java
+@Test
+void myTest(TestInfo testInfo) {
+    System.out.println("Running: " + testInfo.getDisplayName());
+}
+```
 
 ## Summary
 
@@ -403,3 +390,19 @@ class MyTest {
 | Test lifecycle (method) | `@Before` / `@After`                         | `@BeforeEach` / `@AfterEach`                               |
 | Test name access        | `@Rule TestName` field                       | `TestInfo` parameter injection                             |
 | Class/method visibility | `public` required                            | Package-private recommended                                |
+
+## See also
+
+The [com.carrotsearch.randomizedtesting.tests](randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/tests)
+package contains tests that demonstrate the features of `randomizedtesting-jupiter` and their migration from JUnit 4.
+A Markdown file is available within the same dir to explain the main differences with the JUnit 4
+implementation:
+
+- [F001 — RandomizedContext injection](randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/tests/F001_RandomizedContextInjection.md): how to inject `RandomizedContext` into test methods and lifecycle hooks to access seeded randomness.
+- [F002 — Seed recovery](randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/tests/F002_SeedRecovery.md): how to retrieve the root seed after a failure so a flaky test can be reproduced exactly.
+- [F003 — Random injection](randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/tests/F003_RandomInjection.md): how to inject a `Random` instance (or a `Supplier<Random>`) directly into test methods, including alternative implementations.
+- [F004 — Seed fixing](randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/tests/F004_SeedFixing.md): how to pin a constant seed at class or method level with `@FixSeed` to reproduce failures deterministically.
+- [F005 — Thread leak detection](randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/tests/F005_ThreadLeaks.md): how to detect threads leaked by tests and capture uncaught background exceptions with `@DetectThreadLeaks`.
+- [F006 — RandomizedTest base class](randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/tests/F006_RandomizedTest.md): overview of the `RandomizedTest` convenience superclass and what changed compared to its JUnit 4 counterpart.
+- [F007 — Test reiteration](randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/tests/F007_TestReiteration.md): how to re-run tests multiple times with the same or varying seed via the `tests.iters` system property.
+- [F999 — Removed features](randomizedtesting-jupiter/src/test/java/com/carrotsearch/randomizedtesting/tests/F999_RemovedFeatures.md): features from `RandomizedRunner` that are dropped or replaced by built-in JUnit Jupiter equivalents (`@Tag`, `@TempDir`, `@TestMethodOrder`, etc.).
