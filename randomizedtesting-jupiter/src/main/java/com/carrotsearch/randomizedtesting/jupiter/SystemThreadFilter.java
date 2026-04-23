@@ -22,6 +22,11 @@ public class SystemThreadFilter implements Predicate<Thread> {
       return true;
     }
 
+    // Intellij Idea attaches to forked test processes using jmx/rmi. This is asynchronous and
+    // unpredictable.
+    if (Boolean.getBoolean("intellij.debug.agent")) {
+    }
+
     // These are some of the "known" threads that should be ignored.
     var tName = t.getName();
     return switch (tName) {

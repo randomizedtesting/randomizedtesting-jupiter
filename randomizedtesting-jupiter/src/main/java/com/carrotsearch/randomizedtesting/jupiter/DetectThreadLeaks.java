@@ -57,6 +57,10 @@ public @interface DetectThreadLeaks {
    * <p>Annotations are collected hierarchically from the class and its superclasses, and the
    * filters from all levels are combined.
    *
+   * <p>The default value of this annotation is {@link SystemThreadFilter} which excludes many known
+   * system and other ignorable threads. Add this filter explicitly when you redeclare the
+   * exclusions or omit it if you'd like to detect those system threads.
+   *
    * @see SystemThreadFilter
    */
   @Target({ElementType.TYPE})
