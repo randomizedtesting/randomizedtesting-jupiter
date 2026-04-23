@@ -5,6 +5,8 @@ import static org.junit.platform.testkit.engine.EventConditions.*;
 import static org.junit.platform.testkit.engine.TestExecutionResultConditions.*;
 
 import com.carrotsearch.randomizedtesting.jupiter.DetectThreadLeaks;
+import com.carrotsearch.randomizedtesting.jupiter.Randomized;
+import com.carrotsearch.randomizedtesting.jupiter.SystemThreadFilter;
 import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -384,6 +386,25 @@ public class F005_ThreadLeaks {
       @Test
       void testMethod() {
         ForkJoinPool.commonPool().submit(() -> {}).join();
+      }
+    }
+
+    @Test
+    void intellijJmxThreads() {
+      collectExecutionResults(testKitBuilder(IntellijThreads.class))
+          .results()
+          .allEvents()
+          .assertThatEvents()
+          .doNotHave(event(finishedWithFailure()));
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
+    @DetectThreadLeaks.ExcludeThreads(value = {SystemThreadFilter.class})
+    @Randomized
+    static class IntellijThreads { // extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod() throws Exception {
+        Thread.sleep(1000);
       }
     }
 
