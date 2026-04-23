@@ -22,13 +22,18 @@ public class SystemThreadFilter implements Predicate<Thread> {
       return true;
     }
 
+    var tName = t.getName();
+
     // Intellij Idea attaches to forked test processes using jmx/rmi. This is asynchronous and
     // unpredictable.
     if (Boolean.getBoolean("intellij.debug.agent")) {
+      // JMX server connection timeout
+      if (tName.startsWith("JMX server connection timeout") || tName.startsWith("RMI TCP")) {
+        return true;
+      }
     }
 
     // These are some of the "known" threads that should be ignored.
-    var tName = t.getName();
     return switch (tName) {
       case "JFR request timer",
           "YJPAgent-Telemetry",
