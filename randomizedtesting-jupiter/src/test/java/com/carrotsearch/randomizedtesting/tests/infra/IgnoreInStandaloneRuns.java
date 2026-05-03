@@ -18,14 +18,14 @@ import org.junit.platform.commons.support.AnnotationSupport;
  */
 @Tag("nested-integration-test")
 @ExtendWith({OutputCaptureExtension.class})
-@IgnoreInStandaloneRuns.EnabledIfConfigParaPresent(
-    IgnoreInStandaloneRuns.EnabledIfConfigParaPresent.PARAM_NAME)
+@IgnoreInStandaloneRuns.EnabledIfConfigParamPresent(
+    IgnoreInStandaloneRuns.EnabledIfConfigParamPresent.PARAM_NAME)
 public abstract class IgnoreInStandaloneRuns {
   @Target({ElementType.TYPE, ElementType.METHOD})
   @Retention(RetentionPolicy.RUNTIME)
   @ExtendWith(MyConfigParamCondition.class)
   @Inherited
-  @interface EnabledIfConfigParaPresent {
+  @interface EnabledIfConfigParamPresent {
     String PARAM_NAME = "nested-integration-test";
 
     String value();
@@ -35,7 +35,7 @@ public abstract class IgnoreInStandaloneRuns {
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
       var annotation =
-          AnnotationSupport.findAnnotation(context.getElement(), EnabledIfConfigParaPresent.class);
+          AnnotationSupport.findAnnotation(context.getElement(), EnabledIfConfigParamPresent.class);
       if (annotation.isEmpty()) {
         return ConditionEvaluationResult.enabled("No annotation");
       }

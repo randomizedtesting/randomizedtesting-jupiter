@@ -27,13 +27,13 @@ public final class TestInfra {
     OutputCaptureExtension.drain();
     return EngineTestKit.engine("junit-jupiter")
         .configurationParameter(
-            IgnoreInStandaloneRuns.EnabledIfConfigParaPresent.PARAM_NAME, "true");
+            IgnoreInStandaloneRuns.EnabledIfConfigParamPresent.PARAM_NAME, "true");
   }
 
   public static EngineTestKit.Builder testKitBuilder(String engineId) {
     OutputCaptureExtension.drain();
     return EngineTestKit.engine(engineId)
         .configurationParameter(
-            IgnoreInStandaloneRuns.EnabledIfConfigParaPresent.PARAM_NAME, "true");
+            IgnoreInStandaloneRuns.EnabledIfConfigParamPresent.PARAM_NAME, "true");
   }
 }
