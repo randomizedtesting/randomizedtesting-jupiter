@@ -3,7 +3,7 @@ assertj = "3.27.7"
 googleJavaFormat = "1.34.1"
 junit = "6.1.0"
 nexus-publish = "2.0.0"
-spotless = "8.5.1"
+spotless = "8.6.0"
 
 [libraries]
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
