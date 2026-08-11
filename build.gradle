@@ -3,6 +3,7 @@ plugins {
   alias(libs.plugins.nexus.publish)
   alias(libs.plugins.opts)
   alias(libs.plugins.buildinfra) apply false
+  alias(libs.plugins.benmanes.versions)
 }
 
 apply plugin: com.carrotsearch.gradle.buildinfra.testing.TestingEnvPlugin
