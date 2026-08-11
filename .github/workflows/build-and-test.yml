@@ -44,4 +44,4 @@ jobs:
           jdk-version: ${{ inputs.jdk-version }}
 
       - name: Run validation checks
-        run: ./gradlew check assemble ${{ inputs.gradle-options }}
+        run: ./gradlew --no-configuration-cache check assemble ${{ inputs.gradle-options }}
