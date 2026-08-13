@@ -40,6 +40,9 @@ public class SystemThreadFilter implements Predicate<Thread> {
           "MemoryPoolMXBean notification dispatcher",
           "AWT-AppKit",
           "process reaper",
+          // CompletableFuture's delayed executor thread on JDK < 25; JDK 25+ uses
+          // "ForkJoinPool.commonPool-delayScheduler", covered by KNOWN_SUBSTRINGS.
+          "CompletableFutureDelayScheduler",
           "JUnit5-serializer-daemon" ->
           true;
       default -> KNOWN_SUBSTRINGS.matcher(tName).find();

@@ -11,6 +11,7 @@ import com.carrotsearch.randomizedtesting.tests.infra.IgnoreInStandaloneRuns;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -386,6 +387,23 @@ public class F005_ThreadLeaks {
       @Test
       void testMethod() {
         ForkJoinPool.commonPool().submit(() -> {}).join();
+      }
+    }
+
+    @Test
+    void completableFutureDelayScheduler() {
+      collectExecutionResults(testKitBuilder(SysCompletableFutureDelayer.class))
+          .results()
+          .allEvents()
+          .assertThatEvents()
+          .doNotHave(event(finishedWithFailure()));
+    }
+
+    @DetectThreadLeaks(scope = DetectThreadLeaks.Scope.SUITE)
+    static class SysCompletableFutureDelayer extends IgnoreInStandaloneRuns {
+      @Test
+      void testMethod() {
+        new CompletableFuture<Void>().completeOnTimeout(null, 1, TimeUnit.MILLISECONDS).join();
       }
     }
 
