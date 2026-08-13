@@ -9,7 +9,7 @@ dependencies {
 test {
     useJUnitPlatform {
         excludeTags 'nested-integration-test'
-        includeEngines 'randomizedtesting-jupiter'
+        includeEngines 'junit-jupiter', 'randomizedtesting-jupiter'
     }
     jvmArgs("-Dnet.bytebuddy.safe=true")
 }
