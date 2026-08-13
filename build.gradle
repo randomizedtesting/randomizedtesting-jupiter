@@ -13,9 +13,12 @@ buildOptions {
   addOption("project.version", "Project version")
 }
 
+def projectVersion = buildOptions["project.version"].get()
+def versionCatalog = libs
+
 allprojects {
   group = 'com.carrotsearch.randomizedtesting'
-  version = buildOptions["project.version"].get()
+  version = projectVersion
 }
 
 nexusPublishing {
@@ -32,7 +35,7 @@ nexusPublishing {
 subprojects {
   apply plugin: 'java-library'
   apply plugin: 'com.diffplug.spotless'
-  apply plugin: libs.plugins.opts.get().getPluginId()
+  apply plugin: versionCatalog.plugins.opts.get().getPluginId()
   apply plugin: com.carrotsearch.gradle.buildinfra.testing.TestingEnvPlugin
 
   repositories {
@@ -52,7 +55,7 @@ subprojects {
 
   spotless {
     java {
-      googleJavaFormat(libs.versions.googleJavaFormat.get())
+      googleJavaFormat(versionCatalog.versions.googleJavaFormat.get())
     }
   }
 
@@ -63,7 +66,7 @@ subprojects {
   testing {
     suites {
       test {
-        useJUnitJupiter(libs.versions.junit)
+        useJUnitJupiter(versionCatalog.versions.junit)
       }
     }
   }
