@@ -32,6 +32,16 @@ nexusPublishing {
   }
 }
 
+// Don't suggest pre-release upgrades (milestones, RCs, etc.) for dependencies on stable versions.
+def isPreRelease = { String v -> v =~ /(?i)[.-](alpha|beta|rc|cr|m|ea|preview|snapshot)[.\d-]*$/ }
+
+tasks.named("dependencyUpdates").configure {
+  gradleReleaseChannel = "current"
+  rejectVersionIf {
+    isPreRelease(it.candidate.version) && !isPreRelease(it.currentVersion)
+  }
+}
+
 subprojects {
   apply plugin: 'java-library'
   apply plugin: 'com.diffplug.spotless'
