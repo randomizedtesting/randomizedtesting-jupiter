@@ -22,7 +22,7 @@ use gradle's composite build or install maven artifacts locally with:
 ## Release publishing
 
 ```
-./gradlew publishToSonatype closeSonatypeStagingRepository
+./gradlew publishToMavenCentral
 ```
 
 ## Migration guide

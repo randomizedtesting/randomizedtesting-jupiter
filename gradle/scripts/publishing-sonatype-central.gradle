@@ -1,69 +1,56 @@
-def published = [
-  ":randomizedtesting-jupiter"
-]
+// Publishing to Maven Central (via Sonatype's Central Portal): a bundle upload
+// for releases, the snapshot repository for snapshots.
+//
+//   ./gradlew publishToMavenCentral
+//
+// The plugin itself (MavenCentralPublishingPlugin from buildinfra) is applied in the root
+// build script: buildinfra classes are not visible from script plugins.
+//
+// 'publishLocal' and 'prepareMavenCentralBundle' can be used to inspect
+// what would be published (build/maven, build/maven-bundle).
 
-configure(subprojects.findAll { it.path in published }) {
-  apply plugin: 'maven-publish'
-  apply plugin: 'signing'
+configure(rootProject) {
+  mavenCentralPublishing {
+    bundleName = "randomizedtesting-jupiter"
 
-  // Hack: do not generate or publish gradle metadata files.
-  tasks.withType(GenerateModuleMetadata).configureEach {
-    enabled = false
-  }
+    // Do not generate or publish gradle metadata files.
+    gradleModuleMetadata = false
 
-  plugins.withType(JavaPlugin).configureEach {
-    java {
-      withSourcesJar()
-      withJavadocJar()
-    }
+    pom {
+      url = 'https://github.com/randomizedtesting/randomizedtesting-jupiter'
+      inceptionYear = "2026"
 
-    publishing {
-      def configurePom = {
-        name = "${project.name}"
-        description = "${project.name}"
+      licenses {
+        license {
+          name = 'ASL 2.0 License'
+          url = 'https://github.com/randomizedtesting/randomizedtesting-jupiter/blob/main/LICENSE.txt'
+        }
+      }
+
+      organization {
+        name = "Carrot Search s.c."
+        url = "https://www.carrotsearch.com"
+      }
+
+      developers {
+        developer {
+          id = 'dawid.weiss'
+          name = 'Dawid Weiss'
+          email = 'dawid.weiss@carrotsearch.com'
+        }
+      }
+
+      scm {
+        connection = 'scm:git:git@github.com:randomizedtesting/randomizedtesting-jupiter.git'
+        developerConnection = 'scm:git:git@github.com:randomizedtesting/randomizedtesting-jupiter.git'
         url = 'https://github.com/randomizedtesting/randomizedtesting-jupiter'
-        inceptionYear = "2026"
-
-        licenses {
-          license {
-            name = 'ASL 2.0 License'
-            url = 'https://github.com/randomizedtesting/randomizedtesting-jupiter/blob/main/LICENSE.txt'
-          }
-        }
-
-        organization {
-          name = "Carrot Search s.c."
-          url = "https://www.carrotsearch.com"
-        }
-
-        developers {
-          developer {
-            id = 'dawid.weiss'
-            name = 'Dawid Weiss'
-            email = 'dawid.weiss@carrotsearch.com'
-          }
-        }
-        scm {
-          connection = 'scm:git:git@github.com:randomizedtesting/randomizedtesting-jupiter.git'
-          developerConnection = 'scm:git:git@github.com:randomizedtesting/randomizedtesting-jupiter.git'
-          url = 'https://github.com/randomizedtesting/randomizedtesting-jupiter'
-        }
-      }
-
-      publications {
-        jars(MavenPublication) {
-          from components.java
-          groupId = project.group
-          artifactId = project.base.archivesName.get()
-
-          pom(configurePom)
-        }
       }
     }
 
-    signing {
-      required = { !project.version.endsWith('-SNAPSHOT') }
-      sign publishing.publications.jars
+    project(":randomizedtesting-jupiter") {
+      pom {
+        description = "randomizedtesting-jupiter"
+      }
     }
   }
 }
