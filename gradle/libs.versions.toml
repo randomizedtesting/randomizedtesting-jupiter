@@ -14,5 +14,5 @@ junit-platform-testkit = { module = "org.junit.platform:junit-platform-testkit",
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 opts = { id = "com.carrotsearch.gradle.opts", version = "0.2.3" }
-buildinfra = "com.carrotsearch.gradle.buildinfra:0.0.26"
+buildinfra = "com.carrotsearch.gradle.buildinfra:0.0.27"
 benmanes-versions = "io.github.ben-manes.versions:0.64.0"
